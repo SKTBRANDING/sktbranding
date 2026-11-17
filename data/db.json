@@ -1,0 +1,679 @@
+{
+  "projects": [
+    {
+      "id": "proj-1",
+      "title": "Aethelgard Botanical Spirits",
+      "slug": "aethelgard-botanical-spirits",
+      "client": "Aethelgard Distillers Co.",
+      "category": "Packaging",
+      "year": "2025",
+      "coverImage": "/uploads/51f7a60f-9b6b-47e2-b0f3-6f5bad42756c.png",
+      "imageAlt": "Luxury amber glass bottle with custom embossed foil label",
+      "galleryImages": [
+        "/uploads/1555735d-6033-4381-9687-8b64a2639de7.png",
+        "/uploads/b8284129-f509-414c-8369-d66bf988c97f.png"
+      ],
+      "overview": "A premium packaging and visual identity system crafted for high-altitude botanical gin distillers. Featuring tactile debossing, warm copper foils, and bespoke botanical typography.",
+      "services": [
+        "Brand Strategy",
+        "Custom Lettering",
+        "Packaging Architecture",
+        "Production Supervision"
+      ],
+      "approach": "We immersed ourselves in the sub-alpine flora harvested for Aethelgard. The resulting label design balances heritage apothecary craftsmanship with minimalist modern silhouettes, resulting in an extraordinary shelf presence that increased distributor pre-orders by 340%.",
+      "externalLink": "https://behance.net",
+      "isSample": true,
+      "isFeatured": true,
+      "published": true,
+      "order": 1,
+      "createdAt": "2025-01-10T10:00:00.000Z",
+      "updatedAt": "2026-10-28T12:06:14.681Z"
+    },
+    {
+      "id": "proj-2",
+      "title": "Kromos Audio Spatial System",
+      "slug": "kromos-audio-spatial-system",
+      "client": "Kromos Soundworks Berlin",
+      "category": "Branding",
+      "year": "2025",
+      "coverImage": "/uploads/875c5c07-734d-46f0-8998-3f8e36991e94.png",
+      "imageAlt": "Monochromatic futuristic sound hardware branding with electric orange accents",
+      "galleryImages": [
+        "/uploads/66d4b576-6d24-4a71-b72a-8869af8cd5aa.png",
+        "/uploads/fa8c4dc2-015a-42ca-8a9e-1c37bce5693a.png",
+        "/uploads/b65e6af4-e3e0-412f-9ed3-00c77ea40c19.png"
+      ],
+      "overview": "A complete sonic and visual identity overhaul for next-generation spatial acoustics hardware, bridging high-end industrial engineering with visceral audio sensations.",
+      "services": [
+        "Comprehensive Identity",
+        "Motion Language",
+        "UI Component System",
+        "Packaging"
+      ],
+      "approach": "Leveraging brutalist geometry paired with high-voltage neon orange accents against obsidian textures. The dynamic waveform motif flexes from physical anodized aluminum volume dials to responsive screen interfaces.",
+      "externalLink": "https://behance.net",
+      "isSample": true,
+      "isFeatured": true,
+      "published": true,
+      "order": 2,
+      "createdAt": "2025-01-15T12:00:00.000Z",
+      "updatedAt": "2026-10-28T12:06:49.894Z"
+    },
+    {
+      "id": "proj-3",
+      "title": "Vanguard Architectural Studio",
+      "slug": "vanguard-architectural-studio",
+      "client": "Vanguard Atelier Zurich",
+      "category": "Web Design",
+      "year": "2024",
+      "coverImage": "/uploads/ece25095-1dcc-49d5-ba18-1936529cb87e.png",
+      "imageAlt": "Minimalist editorial architecture monograph and web experience",
+      "galleryImages": [
+        "/uploads/3ef92650-b749-4793-bd6d-5ad222b0ebca.png",
+        "/uploads/b27f5131-5197-4972-b126-a6c7bdc9f60a.jpg"
+      ],
+      "overview": "Digital experience and physical exhibition collateral designed for an award-winning brutalist architecture collective.",
+      "services": [
+        "Digital Experience",
+        "Creative Direction",
+        "Print Monographs"
+      ],
+      "approach": "Structured around golden-ratio grid systems with generous white-space (or black-space in dark mode), fluid masonry transitions, and high-fidelity project walkthroughs.",
+      "externalLink": "https://behance.net",
+      "isSample": true,
+      "isFeatured": false,
+      "published": true,
+      "order": 3,
+      "createdAt": "2024-11-20T08:00:00.000Z",
+      "updatedAt": "2026-10-28T12:07:53.673Z"
+    },
+    {
+      "id": "proj-4",
+      "title": "SOCIAL MEDIA POSTERS",
+      "slug": "neoluxe-paris-fashion-week",
+      "client": "BAITHULRASA",
+      "category": "Social Media",
+      "year": "2026",
+      "coverImage": "/uploads/d0e68bab-8b4c-42f1-9929-feee98dbf55e.jpg",
+      "imageAlt": "High-contrast editorial social campaign for avant-garde haute couture",
+      "galleryImages": [
+        "/uploads/f72ce765-57b3-42f4-b039-0252bc57f43a.jpg",
+        "/uploads/8a7d9c6e-373b-445f-8628-283a8f3da439.jpg",
+        "/uploads/f646b62c-3158-4ed0-8e49-a4cfdd843b47.jpg",
+        "/uploads/7a2f9b7d-803f-4e7e-8be7-b5850c70effc.jpg",
+        "/uploads/09c8b70d-10d3-4044-8d44-2b68a87b91b5.jpg",
+        "/uploads/1d608469-b926-457b-a8a3-aed2c7687379.jpg"
+      ],
+      "overview": "A hyper-stylized social media campaign and digital invitation suite for NeoLuxe Autumn/Winter runway preview.",
+      "services": [
+        "Campaign Identity",
+        "Social Media Creatives",
+        "Motion Graphics",
+        "Event Invitations"
+      ],
+      "approach": "We synchronized grain-textured film photography with razor-sharp kinetic typography in electric vermilion. The campaign generated over 2.4M organic impressions across fashion platforms within 72 hours.",
+      "externalLink": "https://www.instagram.com/baitulrasa/",
+      "isSample": true,
+      "isFeatured": true,
+      "published": true,
+      "order": 10,
+      "createdAt": "2025-02-01T15:00:00.000Z",
+      "updatedAt": "2026-10-28T16:06:14.445Z"
+    },
+    {
+      "id": "proj-5",
+      "title": "Solstice Biocare Organics",
+      "slug": "solstice-biocare-organics",
+      "client": "Solstice Labs California",
+      "category": "Packaging",
+      "year": "2024",
+      "coverImage": "/uploads/497a174b-c074-437e-b50e-c8c78bc194f0.png",
+      "imageAlt": "Minimalist dark cosmetic serum bottles with vibrant terracotta labels",
+      "galleryImages": [
+        "/uploads/71d58c63-b0f6-41b4-afd7-6f26db64dd75.png",
+        "/uploads/07e261a0-e2c7-4cc5-80f5-3a5dbb53ad29.png",
+        "/uploads/c5b8c148-26af-4e41-b92e-d2a86ba21e58.png"
+      ],
+      "overview": "Sustainable luxury packaging system incorporating compostable mycelium packaging and recycled violet glass.",
+      "services": [
+        "Eco-Packaging Design",
+        "Label Systems",
+        "3D Photorealistic Renderings"
+      ],
+      "approach": "Proved that sustainable skincare does not require rustic compromises. The identity blends clinical purity with warm solar gradients, creating a category-defining cosmetic brand.",
+      "externalLink": "https://behance.net",
+      "isSample": true,
+      "isFeatured": false,
+      "published": true,
+      "order": 5,
+      "createdAt": "2024-09-12T11:00:00.000Z",
+      "updatedAt": "2026-11-02T11:05:11.399Z",
+      "videoUrl": "",
+      "videoAspectRatio": "16:9"
+    },
+    {
+      "id": "proj-6",
+      "title": "Orbit Pay Global Fintech",
+      "slug": "orbit-pay-global-fintech",
+      "client": "Orbit Technologies Singapore",
+      "category": "Logo Design",
+      "year": "2025",
+      "coverImage": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1200&q=80",
+      "imageAlt": "Dynamic 3D fluid geometric logo monogram in radiant orange and charcoal",
+      "galleryImages": [
+        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=1400&q=80",
+        "https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?auto=format&fit=crop&w=1400&q=80"
+      ],
+      "overview": "Brand mark and trademark architecture for an international cross-border liquidity engine serving emerging markets.",
+      "services": [
+        "Logo System & Monogram",
+        "Brand Guidelines",
+        "Vector Motion Toolkit"
+      ],
+      "approach": "Constructed an unbroken topological loop conveying continuous circulation, infinite movement, and cryptographic trust. Scalable from a 16px favicon to monumental airport billboard campaigns.",
+      "externalLink": "https://behance.net",
+      "isSample": true,
+      "isFeatured": true,
+      "published": true,
+      "order": 6,
+      "createdAt": "2025-02-10T09:30:00.000Z",
+      "updatedAt": "2026-10-28T17:15:23.533Z"
+    },
+    {
+      "id": "proj-1793207853425",
+      "title": "carousel  ",
+      "slug": "carousel-223",
+      "client": "baithurasa",
+      "category": "Branding",
+      "year": "2026",
+      "coverImage": "/uploads/23a8ccbc-e335-465d-8b88-22995f471017.png",
+      "imageAlt": "carousel  ",
+      "galleryImages": [
+        "/uploads/64db3a6d-a5e4-468f-8231-ec5969db2544.png",
+        "/uploads/1c507116-fded-4a10-92dd-bbe261338286.png",
+        "/uploads/b5a50b3a-68c6-475b-aabc-b5e00027980b.png"
+      ],
+      "overview": "",
+      "services": [],
+      "approach": "",
+      "externalLink": "",
+      "isSample": false,
+      "isFeatured": false,
+      "published": true,
+      "order": 7,
+      "createdAt": "2026-10-28T17:17:33.425Z",
+      "updatedAt": "2026-10-28T17:31:04.725Z"
+    },
+    {
+      "id": "proj-1793617402768",
+      "title": "logo presentation",
+      "slug": "logo-presentation-47",
+      "client": "fff",
+      "category": "Branding",
+      "year": "2026",
+      "coverImage": "/uploads/1406db44-a5bc-4030-a77d-798165114353.png",
+      "imageAlt": "logo presentation",
+      "galleryImages": [],
+      "videoUrl": "/uploads/ee0208f6-e92d-44f6-99bd-c385fb18511a.mp4",
+      "videoAspectRatio": "9:16",
+      "overview": "",
+      "services": [],
+      "approach": "",
+      "externalLink": "",
+      "isSample": false,
+      "isFeatured": false,
+      "published": true,
+      "order": 8,
+      "createdAt": "2026-11-02T11:03:22.768Z",
+      "updatedAt": "2026-11-02T11:04:08.457Z"
+    }
+  ],
+  "services": [
+    {
+      "id": "srv-1",
+      "title": "Brand Strategy & Identity",
+      "description": "Strategic positioning, distinctive visual systems, color theory, and comprehensive brand books engineered to make your company unmistakable in competitive markets.",
+      "icon": "Compass",
+      "deliverables": [
+        "Brand Positioning & Narrative",
+        "Complete Visual Identity Systems",
+        "Typography & Palette Standards",
+        "Brand Guidelines & Asset Kits"
+      ],
+      "order": 1,
+      "published": true
+    },
+    {
+      "id": "srv-2",
+      "title": "Logo Design",
+      "description": "Iconic, memorable logo marks and custom typographic logotypes crafted with rigorous mathematical balance, versatile across miniature favicons and monumental signage.",
+      "icon": "Shapes",
+      "deliverables": [
+        "Primary & Secondary Marks",
+        "Custom Typographic Monograms",
+        "Colorways & Clear-Space Rules",
+        "Vector Export Formats (SVG, EPS, PDF)"
+      ],
+      "order": 2,
+      "published": true
+    },
+    {
+      "id": "srv-3",
+      "title": "Social Media Creatives",
+      "description": "Thumb-stopping campaign art direction, cohesive social templates, dynamic motion graphics, and editorial content systems tailored to boost organic engagement.",
+      "icon": "Share2",
+      "deliverables": [
+        "Custom Post & Carousel Templates",
+        "Motion Stories & Reels Direction",
+        "Campaign Art Direction",
+        "Brand Tone of Voice in Social"
+      ],
+      "order": 3,
+      "published": true
+    },
+    {
+      "id": "srv-4",
+      "title": "Packaging Design",
+      "description": "Tactile packaging experiences, bespoke unboxing structures, custom die-cuts, and luxury finishes that command premium retail shelf presence.",
+      "icon": "Package",
+      "deliverables": [
+        "Structural Box & Label Engineering",
+        "Specialty Foils & Debossing Finishes",
+        "Sustainable Material Specifications",
+        "Factory-Ready Production Files"
+      ],
+      "order": 4,
+      "published": true
+    },
+    {
+      "id": "srv-5",
+      "title": "Print & Marketing Materials",
+      "description": "Elevated physical marketing assets including luxury business cards, editorial brochures, large-scale event booths, and promotional collateral.",
+      "icon": "Printer",
+      "deliverables": [
+        "Editorial Lookbooks & Pitch Decks",
+        "Luxury Foil Business Cards",
+        "Large Format Signage & Banners",
+        "Print Proofing & Color Matching"
+      ],
+      "order": 5,
+      "published": true
+    },
+    {
+      "id": "srv-6",
+      "title": "Website & UI Design",
+      "description": "High-converting, responsive digital experiences with immersive micro-interactions, dark aesthetic art direction, and seamless design-to-code execution.",
+      "icon": "Globe",
+      "deliverables": [
+        "Figma Design Systems & Prototypes",
+        "Responsive Mobile & Desktop Layouts",
+        "Micro-Interactions & Motion Design",
+        "Developer Handoff Documentation"
+      ],
+      "order": 6,
+      "published": true
+    }
+  ],
+  "content": {
+    "hero": {
+      "badge": "CREATIVE BRANDING & DESIGN STUDIO",
+      "headline": "Design That Makes\nYour Brand Stand Out.",
+      "supportingCopy": "We create thoughtful brand identities, striking visuals, and digital experiences that help businesses connect with their audience.",
+      "primaryButtonText": "Explore Our Work",
+      "primaryButtonLink": "#works",
+      "secondaryButtonText": "Start a Project",
+      "secondaryButtonLink": "#contact",
+      "heroImage": "/uploads/8ece68bf-f0ab-4317-8210-593a7bf538a6.png",
+      "stats": [
+        {
+          "id": "stat-1",
+          "value": "140+",
+          "label": "Brands Crafted"
+        },
+        {
+          "id": "stat-2",
+          "value": "98%",
+          "label": "Client Recommendation"
+        },
+        {
+          "id": "stat-3",
+          "value": "18",
+          "label": "International Design Awards"
+        },
+        {
+          "id": "stat-4",
+          "value": "8+",
+          "label": "Years of Excellence"
+        }
+      ]
+    },
+    "about": {
+      "badge": "ABOUT SKT BRANDING",
+      "headline": "Creative Thinking.\nMeaningful Design.",
+      "intro": "Founded with an uncompromising passion for craft, SKT Branding is an independent design agency that transforms ambitious concepts into iconic brands.",
+      "approach": "We reject generic templates and sterile trends. Our work is grounded in deep strategic insight, meticulous typography, and bold creative courage. Whether crafting an artisanal packaging line or orchestrating a global identity rebrand, we design with purpose, clarity, and enduring impact.",
+      "image": "/uploads/27bad217-cf97-498d-844b-8385b4ef4f51.png",
+      "values": [
+        {
+          "title": "Strategic Rigor",
+          "description": "Every curve, color, and typeface is rooted in commercial insight and audience understanding."
+        },
+        {
+          "title": "Artisanal Obsession",
+          "description": "We treat digital and physical design with master craftsman precision down to the fraction of a millimeter."
+        },
+        {
+          "title": "Direct Partnership",
+          "description": "You collaborate directly with senior design directors, ensuring zero translation loss and rapid agility."
+        },
+        {
+          "title": "New Core Pillar",
+          "description": "Description of agency principle or philosophy..."
+        },
+        {
+          "title": "New Core Pillar",
+          "description": "Description of agency principle or philosophy..."
+        },
+        {
+          "title": "New Core Pillar",
+          "description": "Description of agency principle or philosophy..."
+        },
+        {
+          "title": "New Core Pillar",
+          "description": "Description of agency principle or philosophy..."
+        },
+        {
+          "title": "New Core Pillar",
+          "description": "Description of agency principle or philosophy..."
+        }
+      ],
+      "founder": {
+        "name": "SALMAN KT",
+        "role": "Founder & Principal Creative Director",
+        "bio": "With over a decade of experience crafting identities for luxury, technology, and consumer brands across Tokyo, London, and New York.",
+        "photo": "/uploads/bbbeb494-bace-4027-90ac-6e6989a98fcb.png",
+        "enabled": true
+      }
+    },
+    "process": {
+      "badge": "OUR PROCESS",
+      "headline": "A deliberate process for exceptional results.",
+      "description": "Three focused phases designed to eliminate guesswork, inspire creative breakthroughs, and deliver bulletproof design solutions.",
+      "steps": [
+        {
+          "number": "01",
+          "title": "Discover",
+          "subtitle": "Understand the business, audience, and goals.",
+          "description": "We begin with deep immersion into your enterprise. Through stakeholder discovery workshops, competitive audits, and audience sentiment analysis, we establish the strategic anchor points that guide every creative decision.",
+          "tags": [
+            "Market Audit",
+            "Brand Architecture",
+            "Audience Personas",
+            "Strategic Brief"
+          ],
+          "thumbnail": "https://images.unsplash.com/photo-1531403009284-440f080d1e12?auto=format&fit=crop&w=600&q=80"
+        },
+        {
+          "number": "02",
+          "title": "Design",
+          "subtitle": "Develop concepts and refine the visual direction.",
+          "description": "We explore divergent creative territories, translating strategic insight into tangible visual concepts. Through iterative design sprints, we refine logos, color schemes, typography systems, and tactile packaging until the brand identity is unmistakably powerful.",
+          "tags": [
+            "Visual Exploration",
+            "Bespoke Typography",
+            "Mockup Prototyping",
+            "Refinement Sprints"
+          ],
+          "thumbnail": "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?auto=format&fit=crop&w=600&q=80"
+        },
+        {
+          "number": "03",
+          "title": "Deliver",
+          "subtitle": "Prepare final assets and support the launch.",
+          "description": "Flawless production handoff. We author comprehensive brand books, generate complete vector and raster asset libraries, coordinate with specialized print vendors, and provide ongoing launch support to guarantee seamless implementation.",
+          "tags": [
+            "Brand Guidelines",
+            "Production-Ready Assets",
+            "Vendor Proofing",
+            "Launch Support"
+          ],
+          "thumbnail": "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=600&q=80"
+        }
+      ]
+    },
+    "finalCta": {
+      "badge": "START A CONVERSATION",
+      "headline": "Let’s Build Something Remarkable.",
+      "supportingCopy": "Have an upcoming brand launch, redesign, or creative challenge? Connect with us to explore how SKT Branding can elevate your market presence."
+    }
+  },
+  "testimonials": [],
+  "inquiries": [],
+  "settings": {
+    "agencyName": "SKT Branding",
+    "tagline": "Premium Graphic Design & Strategic Brand Identity Studio",
+    "logoText": "SKT BRANDING",
+    "logoMarkUrl": "",
+    "email": "sktbranding@gmail.com",
+    "phone": "+91 6282 317 214",
+    "whatsapp": "+91 6282 317 214",
+    "address": "401 Broadway, Suite 1200, SoHo, New York, NY 10013",
+    "socialLinks": {
+      "whatsapp": "https://wa.me/15557829301",
+      "email": "mailto:contact@sktbranding.com",
+      "instagram": "https://www.instagram.com/sktbranding/?hl=en",
+      "behance": "https://behance.net/sktbranding",
+      "linkedin": "https://linkedin.com/company/sktbranding",
+      "twitter": "https://x.com/sktbranding"
+    },
+    "seoTitle": "SKT Branding — High-Impact Graphic Design & Brand Identity Agency",
+    "seoDescription": "SKT Branding creates thoughtful brand identities, striking visuals, and digital experiences that make brands unforgettable."
+  },
+  "designers": [
+    {
+      "id": "des-1",
+      "name": "FIDHA WAFIYYA",
+      "email": "fida@gmail.com",
+      "specialty": "graphic designer",
+      "avatar": "",
+      "token": "dsg_aria_7f8e91a2bc4d",
+      "status": "active",
+      "createdAt": "2025-01-10T09:00:00.000Z",
+      "lastActiveAt": "2026-11-17T03:34:24.432Z",
+      "notes": "Specializes in Swiss minimalism, typography systems, and modern luxury brand guidelines."
+    },
+    {
+      "id": "des-2",
+      "name": "Lucas Silva",
+      "email": "lucas.silva@designers.sktbranding.com",
+      "specialty": "3D Packaging & Industrial Design",
+      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+      "token": "dsg_lucas_4b2c19e3fe5a",
+      "status": "active",
+      "createdAt": "2025-01-15T11:00:00.000Z",
+      "lastActiveAt": "2026-11-16T17:41:02.894Z",
+      "notes": "Expert in Blender 3D photorealistic mockups, structural packaging dielines, and foil finishing."
+    },
+    {
+      "id": "des-3",
+      "name": "Elena Vane",
+      "email": "elena.vane@designers.sktbranding.com",
+      "specialty": "Social Media & Motion Graphics",
+      "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
+      "token": "dsg_elena_8c3d55f190ab",
+      "status": "active",
+      "createdAt": "2025-02-01T10:00:00.000Z",
+      "lastActiveAt": "2025-02-28T11:20:00.000Z",
+      "notes": "Creative lead for kinetic typography, animated campaign teasers, and high-conversion social assets."
+    }
+  ],
+  "tasks": [
+    {
+      "id": "task-02c4756c",
+      "title": "POSTER DESIGN",
+      "client": "BAITUL RASA",
+      "brief": "APLE POSTER",
+      "textContent": "",
+      "deliverables": "Standard deliverables as described in brief",
+      "dimensions": "",
+      "fileFormats": "AI, PSD, PDF, High-Res PNG",
+      "priority": "urgent",
+      "deadline": "2026-11-17",
+      "status": "in_progress",
+      "assignedDesignerId": "des-1",
+      "assignedDesignerName": "FIDHA WAFIYYA",
+      "assignedAt": "2026-11-17T03:33:35.649Z",
+      "referenceFiles": [
+        {
+          "id": "4f25d888-1715-4640-b3b5-fd60988fdc0f",
+          "name": "divali.jpg",
+          "url": "/uploads/tasks/dd7a1480-9_divali.jpg",
+          "size": 3248523,
+          "type": "image/jpeg",
+          "uploadedAt": "2026-11-17T03:40:04.334Z"
+        }
+      ],
+      "submissions": [],
+      "createdAt": "2026-11-17T03:33:35.649Z",
+      "updatedAt": "2026-11-17T03:40:06.629Z"
+    },
+    {
+      "id": "task-103",
+      "title": "Vesper Botanical Luxury Skincare Packaging",
+      "client": "Vesper Organics Paris",
+      "brief": "Design sustainable folding carton packaging with blind debossing and copper foil accents for Vesper's night restorative serum. We want tactile luxury using FSC certified uncoated black paperboard.",
+      "deliverables": "Complete packaging dieline design, embossing die production guides, and photorealistic 3D presentation renders.",
+      "dimensions": "Outer carton: 45mm x 45mm x 135mm",
+      "fileFormats": "AI master dielines with separate spot layers, Print PDF, 4x 3D JPG renders (1920x1080)",
+      "priority": "urgent",
+      "deadline": "2025-03-05T18:00:00.000Z",
+      "status": "revision_requested",
+      "assignedDesignerId": "des-2",
+      "assignedDesignerName": "Lucas Silva",
+      "assignedAt": "2025-02-22T08:00:00.000Z",
+      "referenceFiles": [
+        {
+          "id": "ref-model-1",
+          "name": "Vesper_Carton_3D_Architecture.glb",
+          "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+          "size": 14200000,
+          "type": "model/gltf-binary",
+          "uploadedAt": "2025-02-22T08:10:00.000Z",
+          "category": "model"
+        },
+        {
+          "id": "ref-pdf-1",
+          "name": "Vesper_Carton_Dieline_Guidelines.pdf",
+          "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+          "size": 4500000,
+          "type": "application/pdf",
+          "uploadedAt": "2025-02-22T08:12:00.000Z",
+          "category": "pdf"
+        },
+        {
+          "id": "ref-png-1",
+          "name": "Vesper_Foil_Embossing_Texture.png",
+          "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+          "size": 2800000,
+          "type": "image/png",
+          "uploadedAt": "2025-02-22T08:14:00.000Z",
+          "category": "image"
+        }
+      ],
+      "submissions": [
+        {
+          "id": "sub-1",
+          "version": 1,
+          "versionLabel": "Original Submission",
+          "submittedAt": "2025-02-25T17:30:00.000Z",
+          "designerId": "des-2",
+          "designerName": "Lucas Silva",
+          "notes": "Initial carton architecture with copper hot-stamping on 380gsm black linen board. Included two variations for the top tuck flap seal.",
+          "files": [
+            {
+              "id": "f-1",
+              "name": "Vesper_Carton_v1_Dieline.pdf",
+              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1400&q=80",
+              "size": 8900000,
+              "type": "application/pdf",
+              "uploadedAt": "2025-02-25T17:28:00.000Z"
+            },
+            {
+              "id": "f-2",
+              "name": "Vesper_Serum_3D_Mockups.zip",
+              "url": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&q=80",
+              "size": 24500000,
+              "type": "application/zip",
+              "uploadedAt": "2025-02-25T17:29:00.000Z"
+            }
+          ],
+          "reviewStatus": "revision_requested",
+          "reviewedAt": "2025-02-26T11:15:00.000Z",
+          "adminFeedback": "The overall material choice and copper foil treatment look exquisite. However, please make two critical adjustments:\n1. Increase the tracking on the French ingredient text on the left panel (currently too dense for foil debossing).\n2. Reposition the batch verification QR square to the bottom flap so the exterior panels remain completely minimal.",
+          "designerVoiceNote": {
+            "id": "des-voice-1",
+            "name": "Lucas_Submission_Walkthrough.webm",
+            "url": "https://actions.google.com/sounds/v1/ambiences/humming_room.ogg",
+            "size": 185000,
+            "type": "audio/ogg",
+            "uploadedAt": "2025-02-25T17:31:00.000Z",
+            "category": "audio",
+            "duration": 25
+          },
+          "adminVoiceFeedback": {
+            "id": "admin-voice-rev-1",
+            "name": "Admin_Voice_Revision_Instructions.webm",
+            "url": "https://actions.google.com/sounds/v1/ambiences/humming_room.ogg",
+            "size": 320000,
+            "type": "audio/ogg",
+            "uploadedAt": "2025-02-26T11:16:00.000Z",
+            "category": "audio",
+            "duration": 44
+          },
+          "adminFeedbackAttachments": [
+            {
+              "id": "rev-ref-model",
+              "name": "Vesper_Revision_Reference_Carton.obj",
+              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+              "size": 9800000,
+              "type": "model/obj",
+              "uploadedAt": "2025-02-26T11:17:00.000Z",
+              "category": "model"
+            },
+            {
+              "id": "rev-ref-pdf",
+              "name": "Revision_Deboss_Specifications.pdf",
+              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+              "size": 3200000,
+              "type": "application/pdf",
+              "uploadedAt": "2025-02-26T11:17:00.000Z",
+              "category": "pdf"
+            },
+            {
+              "id": "rev-ref-png",
+              "name": "Foil_Tracking_Adjustment_Markup.png",
+              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
+              "size": 1950000,
+              "type": "image/png",
+              "uploadedAt": "2025-02-26T11:18:00.000Z",
+              "category": "image"
+            }
+          ]
+        }
+      ],
+      "createdAt": "2025-02-22T08:00:00.000Z",
+      "updatedAt": "2025-02-26T11:15:00.000Z",
+      "textContent": "VESPER RESTORATIVE NIGHT SERUM\n100% ORGANIC BOTANICAL EXTRACTS\n50ml e 1.7 FL. OZ.\n\nFormulated with wild Nordic cloudberry seed oil and cold-pressed botanical squalane. Deep cellular recovery overnight.\n\nDirections: Warm 3-4 drops between fingertips and press gently into clean face and neck before sleep.\nBatch: VSP-2026-N09 • Made in France",
+      "voiceBrief": {
+        "id": "voice-brief-103",
+        "name": "Creative_Director_Audio_Brief.webm",
+        "url": "https://actions.google.com/sounds/v1/ambiences/humming_room.ogg",
+        "size": 245000,
+        "type": "audio/ogg",
+        "uploadedAt": "2025-02-22T08:05:00.000Z",
+        "category": "audio",
+        "duration": 38
+      }
+    }
+  ]
+}

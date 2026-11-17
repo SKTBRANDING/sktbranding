@@ -1,26 +1,22 @@
 {
   "name": "sktbranding",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
+  "description": "SKT Branding - Executive Luxury Brand Architecture & Designer Studio MERN Monorepo",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "dev": "npm --prefix client run dev",
+    "server": "npm --prefix server run dev",
+    "start": "node server/server.js",
+    "build": "npm --prefix client run build",
+    "seed": "node server/scripts/seed.js",
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "client:dev": "npm --prefix client run dev",
+    "client:build": "npm --prefix client run build",
+    "server:dev": "npm --prefix server run dev",
+    "server:start": "node server/server.js"
   },
   "dependencies": {
-    "next": "16.4.3",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/turbopack": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.3",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "cloudinary": "^2.5.1",
+    "mongoose": "^8.9.2"
   }
 }

@@ -1,36 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SKT BRANDING — Full-Stack MERN Architecture
 
-## Getting Started
+> **Executive Brand Architecture & Designer Studio Monorepo**  
+> Built with **MongoDB, Express.js, React (Vite + Tailwind CSS), and Node.js**.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🏛️ Monorepo Structure
+
+```
+sktbranding/ (Root Workspace)
+├── client/                     # React Frontend Single Page Application (Vite + Tailwind v4)
+│   ├── public/                 # Static vector assets & favicon
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── admin/          # Admin Studio (Overview, Tasks, Designers, Portfolio, Content, etc.)
+│   │   │   ├── designer/       # Designer Studio (Available Works, My Works, Revisions, Submissions)
+│   │   │   ├── public/         # Public Website (Hero, About, Process, Services, Portfolio, Contact)
+│   │   │   └── ui/             # Voice audio recorder, 3D/PDF/media cards, revision timeline
+│   │   ├── lib/                # Date utilities & offline fallback datasets
+│   │   ├── types/              # TypeScript interfaces
+│   │   ├── api.js              # Full-stack API client
+│   │   ├── App.jsx             # React Router root (/, /admin, /designer, 404)
+│   │   ├── index.css           # Luxury obsidian & electric orange styling
+│   │   └── main.jsx            # Application entry point
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js          # Port 3000 & /api reverse proxy to Express
+├── server/                     # Express.js REST API & MongoDB Backend
+│   ├── config/
+│   │   ├── db.js               # Mongoose connection (Atlas / local)
+│   │   └── cloudinary.js       # Cloudinary media upload integration
+│   ├── middleware/
+│   │   ├── auth.js             # Admin JWT & Designer token security
+│   │   └── upload.js           # Multer multi-format file uploads (100MB limit)
+│   ├── models/                 # Mongoose schemas (Task, Designer, Project, Inquiry, etc.)
+│   ├── routes/                 # Express API endpoints
+│   ├── scripts/
+│   │   └── seed.js             # 1-Click MongoDB data seeder
+│   ├── .env.example
+│   ├── package.json
+│   └── server.js               # Express server entry point (Port 5001)
+├── api/
+│   └── index.js                # Vercel Serverless Function entry point
+├── data/
+│   └── db.json                 # JSON database backup for migrations
+├── public/
+│   └── uploads/                # Local file storage for portfolio & task deliverables
+├── .env.example                # Root environment template
+├── package.json                # Root monorepo orchestrator
+└── vercel.json                 # Production deployment configuration
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚡ Quick Start
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Install Dependencies
+Run from the root directory:
+```bash
+npm run install:all
+```
 
-## Learn More
+### 2. Configure Environment
+Copy `.env.example` to `server/.env`:
+```bash
+cp .env.example server/.env
+```
+Ensure your MongoDB URI (local or MongoDB Atlas) and optional Cloudinary credentials are set.
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Seed MongoDB (Optional)
+Import the initial projects, services, sample tasks, and designers into MongoDB:
+```bash
+npm run seed
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Run Development Servers
+In two terminal tabs:
+```bash
+# Terminal 1: Backend Express API (Runs on port 5001)
+npm run server
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Terminal 2: Frontend React SPA (Runs on port 3000)
+npm run dev
+```
 
-## Deploy on Vercel
+Visit the application at:
+- **Public Website:** `http://localhost:3000`
+- **Admin Studio:** `http://localhost:3000/admin` (Password: `admin123`)
+- **Designer Studio:** `http://localhost:3000/designer?token=dsg_aria_7f8e91a2bc4d`
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚀 Production Deployment
+
+### Option A: Standalone Node / VPS / Docker
+Build the client and start the production Express server (which automatically serves the client build and API):
+```bash
+npm run build
+npm start
+```
+
+### Option B: Vercel
+Deploy directly using the included `vercel.json` and `api/index.js` serverless function bridge.
