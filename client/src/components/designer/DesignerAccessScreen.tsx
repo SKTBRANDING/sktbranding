@@ -29,15 +29,16 @@ export default function DesignerAccessScreen({
     const cleaned = tokenInput.trim();
     if (!cleaned) return;
 
-    // If user pasted a full URL, extract token query param
+    // If user pasted a full URL or partial query, extract token
     let extractedToken = cleaned;
     if (cleaned.includes('token=')) {
-      try {
-        const url = new URL(cleaned);
-        extractedToken = url.searchParams.get('token') || cleaned;
-      } catch {
-        const match = cleaned.match(/token=([a-zA-Z0-9_\-]+)/);
-        if (match && match[1]) extractedToken = match[1];
+      const match = cleaned.match(/[?&]token=([^&#\s]+)/i) || cleaned.match(/token=([a-zA-Z0-9_\-]+)/i);
+      if (match && match[1]) {
+        try {
+          extractedToken = decodeURIComponent(match[1]).trim();
+        } catch {
+          extractedToken = match[1].trim();
+        }
       }
     }
 
@@ -114,11 +115,14 @@ export default function DesignerAccessScreen({
               <input
                 type="text"
                 required
-                placeholder="Paste your invitation link or token..."
+                placeholder="Paste invite link, token, or registered email..."
                 value={tokenInput}
                 onChange={(e) => setTokenInput(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-[#FF4D00] font-mono"
               />
+              <p className="text-[11px] text-[#737373]">
+                Tip: You can enter your full invitation URL, token prefix (<span className="text-[#FF4D00]">dsg_aria_...</span>), or email (<span className="text-[#FF4D00]">fida@gmail.com</span>).
+              </p>
             </div>
 
             <button

@@ -10,17 +10,63 @@ function generateDesignerToken(name) {
   return `dsg_${clean}_${entropy}`;
 }
 
+async function findDesignerByTokenOrInput(rawInput) {
+  if (!rawInput) return null;
+  let str = String(rawInput).trim();
+
+  // If a URL was passed, extract query parameter 'token'
+  if (str.includes('token=')) {
+    const match = str.match(/[?&]token=([^&#\s]+)/i) || str.match(/token=([a-zA-Z0-9_\-]+)/i);
+    if (match && match[1]) {
+      try {
+        str = decodeURIComponent(match[1]).trim();
+      } catch {
+        str = match[1].trim();
+      }
+    }
+  }
+
+  // 1. Exact match by token
+  let designer = await Designer.findOne({ token: str, status: 'active' });
+  if (designer) return designer;
+
+  // 2. Case-insensitive exact match
+  designer = await Designer.findOne({
+    token: { $regex: `^${str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+    status: 'active',
+  });
+  if (designer) return designer;
+
+  // 3. Prefix match if at least 8 chars (e.g. 'dsg_aria_7' matching 'dsg_aria_7f8e91a2bc4d')
+  if (str.length >= 8) {
+    const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    designer = await Designer.findOne({
+      token: { $regex: `^${escaped}`, $options: 'i' },
+      status: 'active',
+    });
+    if (designer) return designer;
+  }
+
+  // 4. Match by email
+  if (str.includes('@')) {
+    designer = await Designer.findOne({ email: str.toLowerCase(), status: 'active' });
+    if (designer) return designer;
+  }
+
+  return null;
+}
+
 // ==========================================
 // GET /api/designers/verify or /api/designer/verify
 // ==========================================
 router.get('/verify', async (req, res) => {
   try {
-    const token = req.query.token || req.headers['x-designer-token'] || req.cookies?.skt_designer_session;
-    if (!token) {
+    const raw = req.query.token || req.headers['x-designer-token'] || req.cookies?.skt_designer_session;
+    if (!raw) {
       return res.status(401).json({ error: 'No invitation access token provided.' });
     }
 
-    const designer = await Designer.findOne({ token, status: 'active' });
+    const designer = await findDesignerByTokenOrInput(raw);
     if (!designer) {
       return res.status(401).json({ error: 'Invalid, deactivated, or revoked invitation link.' });
     }
@@ -49,12 +95,12 @@ router.get('/verify', async (req, res) => {
 // ==========================================
 router.post('/auth', async (req, res) => {
   try {
-    const token = req.body?.token || req.query?.token;
-    if (!token) {
+    const raw = req.body?.token || req.query?.token;
+    if (!raw) {
       return res.status(400).json({ success: false, error: 'Invitation token is required.' });
     }
 
-    const designer = await Designer.findOne({ token, status: 'active' });
+    const designer = await findDesignerByTokenOrInput(raw);
     if (!designer) {
       return res.status(401).json({ success: false, error: 'Invalid or revoked designer invitation token.' });
     }
@@ -62,7 +108,7 @@ router.post('/auth', async (req, res) => {
     designer.lastActiveAt = new Date();
     await designer.save();
 
-    res.cookie('skt_designer_session', token, {
+    res.cookie('skt_designer_session', designer.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -90,12 +136,12 @@ router.post('/auth', async (req, res) => {
 // ==========================================
 router.get('/me', async (req, res) => {
   try {
-    const token = req.cookies?.skt_designer_session || req.headers['x-designer-token'];
-    if (!token) {
+    const raw = req.cookies?.skt_designer_session || req.headers['x-designer-token'];
+    if (!raw) {
       return res.json({ authenticated: false, designer: null });
     }
 
-    const designer = await Designer.findOne({ token, status: 'active' });
+    const designer = await findDesignerByTokenOrInput(raw);
     if (!designer) {
       return res.json({ authenticated: false, designer: null });
     }
