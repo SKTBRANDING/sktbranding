@@ -18,7 +18,7 @@ export default function DesignerRoot({
   initialTasks,
   initialToken,
 }: DesignerRootProps) {
-  const searchParams = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   const [designer, setDesigner] = useState<Designer | null>(initialDesigner);
@@ -35,9 +35,20 @@ export default function DesignerRoot({
 
   // If token is present in searchParams and designer is not loaded yet, verify token
   useEffect(() => {
-    const tokenFromUrl = searchParams.get('token') || initialToken;
-    if (tokenFromUrl && !designer) {
-      handleVerifyToken(tokenFromUrl);
+    let tokenFromUrl: string | null = null;
+    try {
+      if (searchParams && typeof searchParams.get === 'function') {
+        tokenFromUrl = searchParams.get('token');
+      } else if (typeof window !== 'undefined') {
+        tokenFromUrl = new URLSearchParams(window.location.search).get('token');
+      }
+    } catch {
+      tokenFromUrl = null;
+    }
+
+    const activeToken = tokenFromUrl || initialToken;
+    if (activeToken && !designer) {
+      handleVerifyToken(activeToken);
     }
   }, [searchParams, initialToken]);
 
