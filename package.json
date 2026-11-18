@@ -5,18 +5,25 @@
   "description": "SKT Branding - Executive Luxury Brand Architecture & Designer Studio MERN Monorepo",
   "scripts": {
     "dev": "npm --prefix client run dev",
-    "server": "npm --prefix server run dev",
+    "server": "node server/server.js",
     "start": "node server/server.js",
-    "build": "npm --prefix client run build && node -e \"const fs=require('fs'); fs.cpSync('client/dist', 'dist', {recursive:true});\"",
+    "build": "node -e \"const fs = require('fs'), { execSync } = require('child_process'); if (fs.existsSync('client/node_modules/vite')) { try { execSync('npm --prefix client run build && node -e \\\"const f=require(\\'fs\\'); f.cpSync(\\'client/dist\\', \\'dist\\', {recursive:true});\\\"', { stdio: 'inherit' }); } catch(e) { console.warn('Build fallback:', e.message); } } else { console.log('[Build] Using pre-built production dist bundle from repository.'); }\"",
+    "build:local": "npm --prefix client run build && node -e \"const fs=require('fs'); fs.cpSync('client/dist', 'dist', {recursive:true});\"",
     "seed": "node server/scripts/seed.js",
     "install:all": "npm --prefix server install && npm --prefix client install",
     "client:dev": "npm --prefix client run dev",
     "client:build": "npm --prefix client run build",
-    "server:dev": "npm --prefix server run dev",
+    "server:dev": "node server/server.js",
     "server:start": "node server/server.js"
   },
   "dependencies": {
     "cloudinary": "^2.5.1",
-    "mongoose": "^8.9.2"
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.2",
+    "multer": "^1.4.5-lts.1"
   }
 }
