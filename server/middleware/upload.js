@@ -13,8 +13,12 @@ if (!fs.existsSync(TASK_UPLOADS)) fs.mkdirSync(TASK_UPLOADS, { recursive: true }
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // If it's a task attachment or deliverable, store in uploads/tasks
-    cb(null, TASK_UPLOADS);
+    // If it's a task attachment or deliverable, store in uploads/tasks; otherwise uploads root
+    if (req.baseUrl?.includes('tasks') || req.path?.includes('tasks')) {
+      cb(null, TASK_UPLOADS);
+    } else {
+      cb(null, UPLOAD_ROOT);
+    }
   },
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();

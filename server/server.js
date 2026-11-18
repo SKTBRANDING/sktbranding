@@ -17,6 +17,7 @@ const serviceRoutes = require('./routes/service.routes');
 const testimonialRoutes = require('./routes/testimonial.routes');
 const settingRoutes = require('./routes/setting.routes');
 const contentRoutes = require('./routes/content.routes');
+const uploadRoutes = require('./routes/upload.routes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -60,6 +61,7 @@ app.use('/api/services', serviceRoutes);
 app.use('/api/testimonials', testimonialRoutes);
 app.use('/api/settings', settingRoutes);
 app.use('/api/content', contentRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // Static client production build serving
 const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
