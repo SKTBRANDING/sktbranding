@@ -24,6 +24,7 @@ import {
   Monitor,
 } from 'lucide-react';
 import { Project, ProjectCategory } from '@/types';
+import { adminFetch, uploadMediaFile, uploadMultipleMediaFiles } from '@/lib/adminApi';
 
 interface AdminProjectsProps {
   projects: Project[];
@@ -194,21 +195,13 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
 
       showToast(`Uploading video (${(file.size / (1024 * 1024)).toFixed(1)} MB)... Please wait`);
 
-      const data = new FormData();
-      data.append('file', file);
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: data,
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error || 'Failed to upload video');
+      const url = await uploadMediaFile(file);
+      if (url) {
+        setFormData((prev) => ({ ...prev, videoUrl: url }));
+        showToast('Showcase video uploaded successfully!');
+      } else {
+        throw new Error('Failed to upload video');
       }
-
-      setFormData((prev) => ({ ...prev, videoUrl: json.url }));
-      showToast('Showcase video uploaded successfully!');
     } catch (err: unknown) {
       const error = err as Error;
       showToast(error.message, 'error');
@@ -222,52 +215,20 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
       if (isGallery) setUploadingGallery(true);
       else setUploadingCover(true);
 
-      const isVideo = file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg|mkv)$/i.test(file.name);
-      let uploadFile = file;
-      const isSocialMedia = formData.category === 'Social Media';
+      showToast(`Uploading ${isGallery ? 'gallery media' : 'cover photo'}...`);
+      const url = await uploadMediaFile(file);
 
-      if (!isVideo && isSocialMedia) {
-        showToast('Processing image to Width: 1920px × Height: 1080px (16:9)...');
-        uploadFile = await resizeImageToSocialMediaDimensions(file);
-      }
-
-      const data = new FormData();
-      data.append('file', uploadFile);
-      if (!isVideo && isSocialMedia) {
-        data.append('resizeSocialMedia', 'true');
-        data.append('targetWidth', '1920');
-        data.append('targetHeight', '1080');
-      }
-
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: data,
-      });
-
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json.error || 'Failed to upload media file');
-      }
-
-      if (isGallery) {
-        setFormData((prev) => ({
-          ...prev,
-          galleryImages: [...(prev.galleryImages || []), json.url],
-        }));
-        showToast(
-          isVideo
-            ? 'Gallery video asset uploaded successfully!'
-            : isSocialMedia
-            ? 'Gallery image formatted to 1920 × 1080 px and uploaded!'
-            : 'Gallery asset uploaded successfully'
-        );
-      } else {
-        setFormData((prev) => ({ ...prev, coverImage: json.url }));
-        showToast(
-          isSocialMedia
-            ? 'Cover image formatted to 1920 × 1080 px and uploaded!'
-            : 'Cover image uploaded successfully'
-        );
+      if (url) {
+        if (isGallery) {
+          setFormData((prev) => ({
+            ...prev,
+            galleryImages: [...(prev.galleryImages || []), url],
+          }));
+          showToast('Gallery photo added successfully!');
+        } else {
+          setFormData((prev) => ({ ...prev, coverImage: url }));
+          showToast('Cover image updated successfully!');
+        }
       }
     } catch (err: unknown) {
       const error = err as Error;
@@ -275,6 +236,30 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
     } finally {
       if (isGallery) setUploadingGallery(false);
       else setUploadingCover(false);
+    }
+  };
+
+  const handleBatchGalleryUpload = async (files: FileList | File[]) => {
+    const fileList = Array.from(files);
+    if (fileList.length === 0) return;
+
+    try {
+      setUploadingGallery(true);
+      showToast(`Processing & uploading ${fileList.length} photo${fileList.length > 1 ? 's' : ''}...`);
+
+      const urls = await uploadMultipleMediaFiles(fileList);
+      if (urls.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          galleryImages: [...(prev.galleryImages || []), ...urls],
+        }));
+        showToast(`Successfully added ${urls.length} photo${urls.length > 1 ? 's' : ''} to gallery!`);
+      }
+    } catch (err: unknown) {
+      const error = err as Error;
+      showToast(error.message, 'error');
+    } finally {
+      setUploadingGallery(false);
     }
   };
 
@@ -299,21 +284,27 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
 
       if (editingProject) {
         // Update existing
-        const res = await fetch(`/api/projects/${editingProject.id}`, {
+        const res = await adminFetch(`/api/projects/${editingProject.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Failed to update project');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to update project');
+        }
         showToast('Project updated successfully!');
       } else {
         // Create new
-        const res = await fetch('/api/projects', {
+        const res = await adminFetch('/api/projects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        if (!res.ok) throw new Error('Failed to create project');
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || 'Failed to create project');
+        }
         showToast('New project created and published!');
       }
 
@@ -329,7 +320,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+      const res = await adminFetch(`/api/projects/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete project');
       showToast('Project deleted successfully');
       setDeleteConfirmId(null);
@@ -342,7 +333,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
 
   const togglePublish = async (project: Project) => {
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
+      const res = await adminFetch(`/api/projects/${project.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ published: !project.published }),
@@ -358,7 +349,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
 
   const toggleFeatured = async (project: Project) => {
     try {
-      const res = await fetch(`/api/projects/${project.id}`, {
+      const res = await adminFetch(`/api/projects/${project.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isFeatured: !project.isFeatured }),
@@ -776,7 +767,10 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                           className="hidden"
                           onChange={(e) => {
                             const f = e.target.files?.[0];
-                            if (f) handleFileUpload(f, false);
+                            if (f) {
+                              handleFileUpload(f, false);
+                              e.target.value = '';
+                            }
                           }}
                         />
                       </label>
@@ -805,11 +799,15 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                     <span>{uploadingGallery ? 'Uploading...' : 'Upload Media'}</span>
                     <input
                       type="file"
+                      multiple
                       accept="image/*,video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.mov,.ogg"
                       className="hidden"
                       onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFileUpload(f, true);
+                        const files = e.target.files;
+                        if (files && files.length > 0) {
+                          handleBatchGalleryUpload(files);
+                          e.target.value = '';
+                        }
                       }}
                     />
                   </label>
@@ -821,6 +819,19 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                     placeholder="Or enter gallery image/video URL and press Add..."
                     value={newGalleryUrl}
                     onChange={(e) => setNewGalleryUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newGalleryUrl.trim()) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            galleryImages: [...(prev.galleryImages || []), newGalleryUrl.trim()],
+                          }));
+                          setNewGalleryUrl('');
+                          showToast('Added media URL to gallery list');
+                        }
+                      }
+                    }}
                     className="flex-1 px-4 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                   />
                   <button
@@ -832,6 +843,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                           galleryImages: [...(prev.galleryImages || []), newGalleryUrl.trim()],
                         }));
                         setNewGalleryUrl('');
+                        showToast('Added media URL to gallery list');
                       }
                     }}
                     className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs text-white"

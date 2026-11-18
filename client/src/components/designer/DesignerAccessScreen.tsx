@@ -40,6 +40,12 @@ export default function DesignerAccessScreen({
           extractedToken = match[1].trim();
         }
       }
+    } else if (cleaned.includes('/designer') && cleaned.includes('?')) {
+      try {
+        const url = new URL(cleaned, 'https://www.sktbranding.com');
+        const t = url.searchParams.get('token');
+        if (t) extractedToken = t.trim();
+      } catch {}
     }
 
     setLoading(true);
@@ -47,7 +53,7 @@ export default function DesignerAccessScreen({
     try {
       const success = await onVerifyToken(extractedToken);
       if (!success) {
-        setLocalError('Invalid, expired, or revoked invitation link. Please request a new link from your agency administrator.');
+        setLocalError('Invalid, expired, or revoked invitation link. Please request a new link from your agency administrator, or verify your email/token.');
       }
     } catch (err: any) {
       setLocalError(err.message || 'Authentication failed. Please verify your invitation link.');

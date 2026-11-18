@@ -33,8 +33,8 @@ export default function LogoMarquee({
 }: LogoMarqueeProps) {
   // Safe 10 logos array
   const activeLogos = logos && logos.length >= 10 ? logos.slice(0, 10) : defaultLogos;
-  // Duplicate 10 logos so continuous rightward sliding is seamless
-  const duplicatedLogos = [...activeLogos, ...activeLogos];
+  // Quadruple 10 logos so continuous rightward sliding is completely seamless on any screen width
+  const duplicatedLogos = [...activeLogos, ...activeLogos, ...activeLogos, ...activeLogos];
 
   return (
     <section

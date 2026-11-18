@@ -22,6 +22,7 @@ import {
   Users,
 } from 'lucide-react';
 import { DatabaseSchema, Inquiry } from '@/types';
+import { clearAdminToken } from '@/lib/adminApi';
 import AdminOverview from './AdminOverview';
 import AdminProjects from './AdminProjects';
 import AdminServices from './AdminServices';
@@ -65,14 +66,14 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
   const refreshData = async () => {
     try {
       const [projRes, servRes, contRes, testRes, inqRes, settRes, taskRes, desRes] = await Promise.all([
-        fetch('/api/projects?all=true'),
-        fetch('/api/services?all=true'),
-        fetch('/api/content'),
-        fetch('/api/testimonials?all=true'),
-        fetch('/api/inquiries'),
-        fetch('/api/settings'),
-        fetch('/api/tasks'),
-        fetch('/api/designers'),
+        adminFetch('/api/projects?all=true'),
+        adminFetch('/api/services?all=true'),
+        adminFetch('/api/content'),
+        adminFetch('/api/testimonials?all=true'),
+        adminFetch('/api/inquiries'),
+        adminFetch('/api/settings'),
+        adminFetch('/api/tasks'),
+        adminFetch('/api/designers'),
       ]);
 
       const [projects, services, content, testimonials, inquiries, settings, tasks, designers] = await Promise.all([
@@ -103,10 +104,11 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
+      clearAdminToken();
       onLogout();
     }
   };

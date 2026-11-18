@@ -1,35 +1,9 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const crypto = require('crypto');
 
-// Resolve target upload directory
-const UPLOAD_ROOT = path.join(__dirname, '..', '..', 'public', 'uploads');
-const TASK_UPLOADS = path.join(UPLOAD_ROOT, 'tasks');
-
-// Ensure upload folders exist
-if (!fs.existsSync(UPLOAD_ROOT)) fs.mkdirSync(UPLOAD_ROOT, { recursive: true });
-if (!fs.existsSync(TASK_UPLOADS)) fs.mkdirSync(TASK_UPLOADS, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    // If it's a task attachment or deliverable, store in uploads/tasks; otherwise uploads root
-    if (req.baseUrl?.includes('tasks') || req.path?.includes('tasks')) {
-      cb(null, TASK_UPLOADS);
-    } else {
-      cb(null, UPLOAD_ROOT);
-    }
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    const safeBase = path
-      .basename(file.originalname, ext)
-      .replace(/[^a-zA-Z0-9_\-\.]/g, '_')
-      .slice(0, 40);
-    const uniqueSuffix = crypto.randomUUID().slice(0, 10);
-    cb(null, `${uniqueSuffix}_${safeBase}${ext}`);
-  },
-});
+// Use memoryStorage so file buffers are kept in RAM and can be written to disk,
+// uploaded to Cloudinary, or encoded as data URIs without failing on read-only environments
+const storage = multer.memoryStorage();
 
 function fileFilter(req, file, cb) {
   const ext = path.extname(file.originalname).toLowerCase();
@@ -55,7 +29,7 @@ function getFileCategory(filename = '', mimetype = '') {
 
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
   fileFilter,
 });
 

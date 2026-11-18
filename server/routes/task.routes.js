@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const crypto = require('crypto');
 const Task = require('../models/Task');
 const Designer = require('../models/Designer');
@@ -38,17 +40,34 @@ router.post('/upload', requireAnyAuth, upload.single('file'), async (req, res) =
     }
   }
 
-  const publicUrl = `/uploads/tasks/${req.file.filename}`;
+  // Local or data URL fallback
+  const ext = path.extname(req.file.originalname).toLowerCase();
+  const safeBase = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9_\-\.]/g, '_').slice(0, 30);
+  const filename = `${crypto.randomUUID().slice(0, 10)}_${safeBase}${ext}`;
+  const targetDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'tasks');
+
+  let finalUrl = '';
+  let storageType = 'local';
+
+  try {
+    if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+    fs.writeFileSync(path.join(targetDir, filename), req.file.buffer);
+    finalUrl = `/uploads/tasks/${filename}`;
+  } catch (err) {
+    const mime = req.file.mimetype || 'application/octet-stream';
+    finalUrl = `data:${mime};base64,${req.file.buffer.toString('base64')}`;
+    storageType = 'inline';
+  }
 
   return res.json({
     id: crypto.randomUUID(),
     name: req.file.originalname,
-    url: publicUrl,
+    url: finalUrl,
     size: req.file.size,
     type: req.file.mimetype || req.file.originalname.split('.').pop() || 'unknown',
     uploadedAt: new Date().toISOString(),
     category,
-    storage: 'local',
+    storage: storageType,
   });
 });
 

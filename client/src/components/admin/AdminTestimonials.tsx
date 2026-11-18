@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Testimonial } from '@/types';
+import { adminFetch, uploadMediaFile } from '@/lib/adminApi';
 
 interface AdminTestimonialsProps {
   testimonials: Testimonial[];
@@ -63,20 +64,12 @@ export default function AdminTestimonials({
   };
 
   const handleFileUpload = async (file: File) => {
-    const data = new FormData();
-    data.append('file', file);
-
     try {
       setUploadingAvatar(true);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: data,
-      });
+      const url = await uploadMediaFile(file);
+      if (!url) throw new Error('Failed to upload photo');
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to upload photo');
-
-      setFormData((prev) => ({ ...prev, avatar: json.url }));
+      setFormData((prev) => ({ ...prev, avatar: url }));
       showToast('Photo uploaded successfully');
     } catch (err: unknown) {
       const error = err as Error;
@@ -96,7 +89,7 @@ export default function AdminTestimonials({
     setSaving(true);
     try {
       if (editingTestimonial) {
-        const res = await fetch(`/api/testimonials/${editingTestimonial.id}`, {
+        const res = await adminFetch(`/api/testimonials/${editingTestimonial.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -104,7 +97,7 @@ export default function AdminTestimonials({
         if (!res.ok) throw new Error('Failed to update testimonial');
         showToast('Testimonial updated successfully');
       } else {
-        const res = await fetch('/api/testimonials', {
+        const res = await adminFetch('/api/testimonials', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -125,7 +118,7 @@ export default function AdminTestimonials({
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/testimonials/${id}`, { method: 'DELETE' });
+      const res = await adminFetch(`/api/testimonials/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete testimonial');
       showToast('Testimonial deleted successfully');
       setDeleteConfirmId(null);
@@ -138,7 +131,7 @@ export default function AdminTestimonials({
 
   const togglePublish = async (t: Testimonial) => {
     try {
-      const res = await fetch(`/api/testimonials/${t.id}`, {
+      const res = await adminFetch(`/api/testimonials/${t.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ published: !t.published }),

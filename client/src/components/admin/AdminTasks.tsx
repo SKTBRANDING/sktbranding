@@ -32,6 +32,7 @@ import { formatDate } from '@/lib/dateUtils';
 import FileAttachmentCard from '@/components/ui/FileAttachmentCard';
 import RevisionTimeline from '@/components/ui/RevisionTimeline';
 import AudioVoiceControl, { AudioPlayer } from '@/components/ui/AudioVoiceControl';
+import { adminFetch } from '@/lib/adminApi';
 
 interface AdminTasksProps {
   tasks: Task[];
@@ -159,7 +160,7 @@ export default function AdminTasks({
         const data = new FormData();
         data.append('file', file);
 
-        const res = await fetch('/api/tasks/upload', {
+        const res = await adminFetch('/api/tasks/upload', {
           method: 'POST',
           body: data,
         });
@@ -189,7 +190,7 @@ export default function AdminTasks({
         const file = files[i];
         const data = new FormData();
         data.append('file', file);
-        const res = await fetch('/api/tasks/upload', {
+        const res = await adminFetch('/api/tasks/upload', {
           method: 'POST',
           body: data,
         });
@@ -254,7 +255,7 @@ export default function AdminTasks({
     setSavingTask(true);
     try {
       if (editingTask) {
-        const res = await fetch(`/api/tasks/${editingTask.id}`, {
+        const res = await adminFetch(`/api/tasks/${editingTask.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -263,7 +264,7 @@ export default function AdminTasks({
         if (!res.ok) throw new Error(json.error || 'Failed to update task');
         showToast('Task updated successfully!');
       } else {
-        const res = await fetch('/api/tasks', {
+        const res = await adminFetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -292,7 +293,7 @@ export default function AdminTasks({
     }
 
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      const res = await adminFetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete task');
 
       showToast(`Task "${title}" deleted.`);
@@ -312,7 +313,7 @@ export default function AdminTasks({
 
     setReviewing(true);
     try {
-      const res = await fetch(`/api/tasks/${selectedTask.id}/review`, {
+      const res = await adminFetch(`/api/tasks/${selectedTask.id}/review`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

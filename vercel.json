@@ -1,6 +1,11 @@
 {
   "version": 2,
   "outputDirectory": "dist",
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "data/**"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -12,6 +17,15 @@
     }
   ],
   "headers": [
+    {
+      "source": "/(index.html)?",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
     {
       "source": "/(.*)",
       "headers": [

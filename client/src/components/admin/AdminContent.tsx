@@ -14,6 +14,7 @@ import {
   Image as ImageIcon,
 } from 'lucide-react';
 import { WebsiteContent, AgencyStat, CoreValue, ProcessStep } from '@/types';
+import { adminFetch, uploadMediaFile } from '@/lib/adminApi';
 
 interface AdminContentProps {
   content: WebsiteContent;
@@ -50,14 +51,15 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
     if (e) e.preventDefault();
     setSaving(true);
     try {
-      const res = await fetch('/api/content', {
+      const res = await adminFetch('/api/content', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to save website content');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to save website content');
       }
 
       showToast('Website content updated and published live!');
@@ -71,42 +73,34 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
   };
 
   const handleFileUpload = async (file: File, target: string, extraIndex?: number) => {
-    const data = new FormData();
-    data.append('file', file);
-
     try {
       setUploadingTarget(target);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: data,
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to upload image');
+      const url = await uploadMediaFile(file);
+      if (!url) throw new Error('Failed to upload image');
 
       if (target === 'hero') {
         setFormData((prev) => ({
           ...prev,
-          hero: { ...prev.hero, heroImage: json.url },
+          hero: { ...prev.hero, heroImage: url },
         }));
       } else if (target === 'about') {
         setFormData((prev) => ({
           ...prev,
-          about: { ...prev.about, image: json.url },
+          about: { ...prev.about, image: url },
         }));
       } else if (target === 'founder') {
         setFormData((prev) => ({
           ...prev,
           about: {
             ...prev.about,
-            founder: { ...prev.about.founder, photo: json.url },
+            founder: { ...prev.about.founder, photo: url },
           },
         }));
       } else if (target === 'process' && typeof extraIndex === 'number') {
         setFormData((prev) => {
           const nextSteps = [...prev.process.steps];
           if (nextSteps[extraIndex]) {
-            nextSteps[extraIndex].thumbnail = json.url;
+            nextSteps[extraIndex].thumbnail = url;
           }
           return {
             ...prev,

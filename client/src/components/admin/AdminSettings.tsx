@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { AgencySettings } from '@/types';
+import { adminFetch } from '@/lib/adminApi';
 
 interface AdminSettingsProps {
   settings: AgencySettings;
@@ -37,7 +38,7 @@ export default function AdminSettings({ settings, onRefresh, showToast }: AdminS
     setSaving(true);
 
     try {
-      const res = await fetch('/api/settings', {
+      const res = await adminFetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

@@ -33,23 +33,39 @@ async function findDesignerByTokenOrInput(rawInput) {
       let designer = await Designer.findOne({ token: str, status: 'active' });
       if (designer) return designer;
 
+      const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
       designer = await Designer.findOne({
-        token: { $regex: `^${str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+        token: { $regex: `^${escaped}$`, $options: 'i' },
         status: 'active',
       });
       if (designer) return designer;
 
-      if (str.length >= 8) {
-        const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      if (str.length >= 4) {
         designer = await Designer.findOne({
           token: { $regex: `^${escaped}`, $options: 'i' },
           status: 'active',
         });
         if (designer) return designer;
+
+        designer = await Designer.findOne({
+          token: { $regex: escaped, $options: 'i' },
+          status: 'active',
+        });
+        if (designer) return designer;
       }
 
-      if (str.includes('@')) {
-        designer = await Designer.findOne({ email: str.toLowerCase(), status: 'active' });
+      designer = await Designer.findOne({
+        email: { $regex: `^${escaped}`, $options: 'i' },
+        status: 'active',
+      });
+      if (designer) return designer;
+
+      if (str.length >= 3) {
+        designer = await Designer.findOne({
+          name: { $regex: escaped, $options: 'i' },
+          status: 'active',
+        });
         if (designer) return designer;
       }
     } catch (e) {
@@ -134,6 +150,7 @@ router.post('/auth', async (req, res) => {
 
     return res.json({
       success: true,
+      token: designer.token,
       designer: {
         id: designer.id,
         name: designer.name,

@@ -33,7 +33,7 @@ export default function DesignerRoot({
     }, 4500);
   };
 
-  // If token is present in searchParams and designer is not loaded yet, verify token
+  // If token is present in searchParams, initialToken, or localStorage, verify token
   useEffect(() => {
     let tokenFromUrl: string | null = null;
     try {
@@ -46,7 +46,8 @@ export default function DesignerRoot({
       tokenFromUrl = null;
     }
 
-    const activeToken = tokenFromUrl || initialToken;
+    const savedToken = typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : null;
+    const activeToken = tokenFromUrl || initialToken || savedToken;
     if (activeToken && !designer) {
       handleVerifyToken(activeToken);
     }
@@ -66,8 +67,15 @@ export default function DesignerRoot({
         return false;
       }
 
+      const activeToken = data.token || data.designer?.token || token;
+      if (typeof window !== 'undefined' && activeToken) {
+        try {
+          localStorage.setItem('skt_designer_token', activeToken);
+        } catch {}
+      }
+
       setDesigner(data.designer);
-      await refreshTasks();
+      await refreshTasks(activeToken);
       showToast(`Welcome back, ${data.designer.name}!`);
       return true;
     } catch {
@@ -77,9 +85,14 @@ export default function DesignerRoot({
     }
   };
 
-  const refreshTasks = async () => {
+  const refreshTasks = async (overrideToken?: string) => {
     try {
-      const res = await fetch('/api/tasks');
+      const savedToken = overrideToken || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : null);
+      const headers: Record<string, string> = {};
+      if (savedToken) {
+        headers['x-designer-token'] = savedToken;
+      }
+      const res = await fetch('/api/tasks', { headers });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
@@ -97,6 +110,11 @@ export default function DesignerRoot({
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('skt_designer_token');
+        } catch {}
+      }
       setDesigner(null);
       setTasks([]);
       navigate('/designer');

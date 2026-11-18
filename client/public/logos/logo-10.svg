@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
+  <path d="M10 14L26 14L22 34L14 36L10 34Z" stroke="#F5F5F5" stroke-width="1.8" fill="none"/>
+  <path d="M14 20L22 20L18 30Z" fill="#FF4D00"/>
+  <text x="38" y="27" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="900" letter-spacing="4" fill="#F5F5F5">VELOCE</text>
+  <text x="38" y="38" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" font-weight="600" letter-spacing="2" fill="#A3A3A3">CORSE MODENA</text>
+</svg>

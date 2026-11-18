@@ -20,6 +20,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { ServiceItem } from '@/types';
+import { adminFetch } from '@/lib/adminApi';
 
 interface AdminServicesProps {
   services: ServiceItem[];
@@ -97,7 +98,7 @@ export default function AdminServices({ services, onRefresh, showToast }: AdminS
       };
 
       if (editingService) {
-        const res = await fetch(`/api/services/${editingService.id}`, {
+        const res = await adminFetch(`/api/services/${editingService.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -105,7 +106,7 @@ export default function AdminServices({ services, onRefresh, showToast }: AdminS
         if (!res.ok) throw new Error('Failed to update service');
         showToast('Service updated successfully');
       } else {
-        const res = await fetch('/api/services', {
+        const res = await adminFetch('/api/services', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -126,7 +127,7 @@ export default function AdminServices({ services, onRefresh, showToast }: AdminS
 
   const handleDelete = async (id: string) => {
     try {
-      const res = await fetch(`/api/services/${id}`, { method: 'DELETE' });
+      const res = await adminFetch(`/api/services/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete service');
       showToast('Service deleted successfully');
       setDeleteConfirmId(null);
@@ -139,7 +140,7 @@ export default function AdminServices({ services, onRefresh, showToast }: AdminS
 
   const togglePublish = async (service: ServiceItem) => {
     try {
-      const res = await fetch(`/api/services/${service.id}`, {
+      const res = await adminFetch(`/api/services/${service.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ published: !service.published }),

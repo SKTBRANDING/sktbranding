@@ -22,6 +22,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { Designer } from '@/types';
+import { adminFetch, uploadMediaFile } from '@/lib/adminApi';
 
 interface DesignerWithStats extends Designer {
   stats?: {
@@ -100,7 +101,7 @@ export default function AdminDesigners({
     }
 
     try {
-      const res = await fetch(`/api/designers/${designer.id}/token`, {
+      const res = await adminFetch(`/api/designers/${designer.id}/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'regenerate' }),
@@ -118,7 +119,7 @@ export default function AdminDesigners({
   const handleToggleStatus = async (designer: Designer) => {
     const nextStatus = designer.status === 'active' ? 'inactive' : 'active';
     try {
-      const res = await fetch(`/api/designers/${designer.id}`, {
+      const res = await adminFetch(`/api/designers/${designer.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: nextStatus }),
@@ -138,7 +139,7 @@ export default function AdminDesigners({
     }
 
     try {
-      const res = await fetch(`/api/designers/${designer.id}`, {
+      const res = await adminFetch(`/api/designers/${designer.id}`, {
         method: 'DELETE',
       });
       if (!res.ok) throw new Error('Failed to delete designer');
@@ -184,7 +185,7 @@ export default function AdminDesigners({
     setSaving(true);
     try {
       if (editingDesigner) {
-        const res = await fetch(`/api/designers/${editingDesigner.id}`, {
+        const res = await adminFetch(`/api/designers/${editingDesigner.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
@@ -193,7 +194,7 @@ export default function AdminDesigners({
         if (!res.ok) throw new Error(data.error || 'Failed to update designer');
         showToast(`Designer ${formData.name} updated!`);
       } else {
-        const res = await fetch('/api/designers', {
+        const res = await adminFetch('/api/designers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),

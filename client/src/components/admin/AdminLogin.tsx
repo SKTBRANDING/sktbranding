@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, ArrowRight, Eye, EyeOff, ShieldCheck, Sparkles, Database } from 'lucide-react';
+import { setAdminToken } from '@/lib/adminApi';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -29,6 +30,10 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || 'Authentication failed. Please try again.');
+      }
+
+      if (data.token) {
+        setAdminToken(data.token);
       }
 
       onLoginSuccess();

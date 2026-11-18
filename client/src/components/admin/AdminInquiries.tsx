@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Inquiry, InquiryStatus } from '@/types';
 import { formatDate, formatDateTime } from '@/lib/dateUtils';
+import { adminFetch } from '@/lib/adminApi';
 
 interface AdminInquiriesProps {
   inquiries: Inquiry[];
@@ -46,7 +47,7 @@ export default function AdminInquiries({
 
   const handleSaveNotes = async (inquiryId: string, notes: string) => {
     try {
-      const res = await fetch(`/api/inquiries/${inquiryId}`, {
+      const res = await adminFetch(`/api/inquiries/${inquiryId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ notes }),
@@ -64,7 +65,7 @@ export default function AdminInquiries({
 
   const handleStatusChange = async (inquiryId: string, newStatus: InquiryStatus) => {
     try {
-      const res = await fetch(`/api/inquiries/${inquiryId}`, {
+      const res = await adminFetch(`/api/inquiries/${inquiryId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
@@ -86,7 +87,7 @@ export default function AdminInquiries({
 
   const handleDelete = async (inquiryId: string) => {
     try {
-      const res = await fetch(`/api/inquiries/${inquiryId}`, {
+      const res = await adminFetch(`/api/inquiries/${inquiryId}`, {
         method: 'DELETE',
       });
 
