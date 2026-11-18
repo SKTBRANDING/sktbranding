@@ -3,6 +3,7 @@ const router = express.Router();
 const crypto = require('crypto');
 const Project = require('../models/Project');
 const { requireAdmin } = require('../middleware/auth');
+const { isMongoConnected, getJsonDb, saveJsonDb } = require('../utils/dbFallback');
 
 function slugify(text) {
   return text
@@ -20,22 +21,62 @@ function slugify(text) {
 router.get('/', async (req, res) => {
   try {
     const { category, featured, all } = req.query;
-    const filter = {};
 
+    if (isMongoConnected()) {
+      try {
+        const filter = {};
+        if (all !== 'true') filter.published = true;
+        if (category && category !== 'All') filter.category = category;
+        if (featured === 'true') filter.isFeatured = true;
+
+        const projects = await Project.find(filter).sort({ order: 1, createdAt: -1 });
+        if (projects && projects.length) return res.json(projects);
+      } catch (e) {
+        console.warn('[Project Route] Mongo query error, reading json fallback:', e.message);
+      }
+    }
+
+    const db = getJsonDb();
+    let projects = Array.isArray(db.projects) ? [...db.projects] : [];
     if (all !== 'true') {
-      filter.published = true;
+      projects = projects.filter((p) => p.published !== false);
     }
-
     if (category && category !== 'All') {
-      filter.category = category;
+      projects = projects.filter((p) => p.category === category);
     }
-
     if (featured === 'true') {
-      filter.isFeatured = true;
+      projects = projects.filter((p) => p.isFeatured === true);
+    }
+    projects.sort((a, b) => (a.order || 0) - (b.order || 0));
+    return res.json(projects);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ==========================================
+// GET /api/projects/:idOrSlug
+// ==========================================
+router.get('/:idOrSlug', async (req, res) => {
+  try {
+    const param = req.params.idOrSlug;
+
+    if (isMongoConnected()) {
+      try {
+        const project = await Project.findOne({
+          $or: [{ id: param }, { slug: param }],
+        });
+        if (project) return res.json(project);
+      } catch (e) {
+        console.warn('[Project Route] Mongo findOne error:', e.message);
+      }
     }
 
-    const projects = await Project.find(filter).sort({ order: 1, createdAt: -1 });
-    return res.json(projects);
+    const db = getJsonDb();
+    const projects = Array.isArray(db.projects) ? db.projects : [];
+    const found = projects.find((p) => p.id === param || p.slug === param);
+    if (!found) return res.status(404).json({ error: 'Project not found' });
+    return res.json(found);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -69,19 +110,10 @@ router.post('/', requireAdmin, async (req, res) => {
     }
 
     const baseSlug = slugify(title);
-    let slug = baseSlug;
-    let count = 1;
-    while (await Project.findOne({ slug })) {
-      slug = `${baseSlug}-${count++}`;
-    }
-
-    const highestOrderProj = await Project.findOne().sort({ order: -1 });
-    const order = highestOrderProj ? (highestOrderProj.order || 0) + 1 : 1;
-
-    const newProject = new Project({
+    const newProjData = {
       id: `proj-${crypto.randomUUID().slice(0, 8)}`,
       title: title.trim(),
-      slug,
+      slug: `${baseSlug}-${Date.now().toString().slice(-4)}`,
       client: client.trim(),
       category,
       year,
@@ -96,27 +128,27 @@ router.post('/', requireAdmin, async (req, res) => {
       externalLink,
       isFeatured: Boolean(isFeatured),
       published: Boolean(published),
-      order,
+      order: Date.now(),
+      createdAt: new Date().toISOString(),
+    };
+
+    if (isMongoConnected()) {
+      try {
+        const newProject = new Project(newProjData);
+        await newProject.save();
+        return res.status(201).json(newProject);
+      } catch (e) {
+        console.warn('[Project Route] Mongo save failed, persisting in db.json:', e.message);
+      }
+    }
+
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.projects)) db.projects = [];
+      db.projects.unshift(newProjData);
+      return db;
     });
 
-    await newProject.save();
-    return res.status(201).json(newProject);
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
-
-// ==========================================
-// GET /api/projects/:idOrSlug
-// ==========================================
-router.get('/:idOrSlug', async (req, res) => {
-  try {
-    const param = req.params.idOrSlug;
-    const project = await Project.findOne({
-      $or: [{ id: param }, { slug: param }],
-    });
-    if (!project) return res.status(404).json({ error: 'Project not found' });
-    return res.json(project);
+    return res.status(201).json(newProjData);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -127,12 +159,32 @@ router.get('/:idOrSlug', async (req, res) => {
 // ==========================================
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
-    const project = await Project.findOne({ id: req.params.id });
-    if (!project) return res.status(404).json({ error: 'Project not found' });
+    if (isMongoConnected()) {
+      try {
+        const project = await Project.findOne({ id: req.params.id });
+        if (project) {
+          Object.assign(project, req.body);
+          await project.save();
+          return res.json(project);
+        }
+      } catch (e) {
+        console.warn('[Project Route] Mongo put error:', e.message);
+      }
+    }
 
-    Object.assign(project, req.body);
-    await project.save();
-    return res.json(project);
+    let updated = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.projects)) db.projects = [];
+      const idx = db.projects.findIndex((p) => p.id === req.params.id);
+      if (idx !== -1) {
+        db.projects[idx] = { ...db.projects[idx], ...req.body };
+        updated = db.projects[idx];
+      }
+      return db;
+    });
+
+    if (!updated) return res.status(404).json({ error: 'Project not found' });
+    return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -143,8 +195,25 @@ router.put('/:id', requireAdmin, async (req, res) => {
 // ==========================================
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    const deleted = await Project.findOneAndDelete({ id: req.params.id });
-    if (!deleted) return res.status(404).json({ error: 'Project not found' });
+    if (isMongoConnected()) {
+      try {
+        const deleted = await Project.findOneAndDelete({ id: req.params.id });
+        if (deleted) return res.json({ success: true, message: 'Project deleted' });
+      } catch (e) {
+        console.warn('[Project Route] Mongo delete error:', e.message);
+      }
+    }
+
+    let found = false;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.projects)) db.projects = [];
+      const len = db.projects.length;
+      db.projects = db.projects.filter((p) => p.id !== req.params.id);
+      found = db.projects.length < len;
+      return db;
+    });
+
+    if (!found) return res.status(404).json({ error: 'Project not found' });
     return res.json({ success: true, message: 'Project deleted' });
   } catch (err) {
     return res.status(500).json({ error: err.message });

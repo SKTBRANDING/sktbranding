@@ -6,6 +6,7 @@ const Designer = require('../models/Designer');
 const { requireAdmin, requireDesigner, requireAnyAuth } = require('../middleware/auth');
 const { upload, getFileCategory } = require('../middleware/upload');
 const { isCloudinaryConfigured, uploadToCloudinary } = require('../config/cloudinary');
+const { isMongoConnected, getJsonDb, saveJsonDb } = require('../utils/dbFallback');
 
 // ==========================================
 // File Upload Endpoint (Audio, 3D models, PDF, PNG, etc.)
@@ -57,27 +58,52 @@ router.post('/upload', requireAnyAuth, upload.single('file'), async (req, res) =
 router.get('/', async (req, res) => {
   try {
     const { status, priority, designerId } = req.query;
-    const filter = {};
 
-    if (status && status !== 'all') {
-      if (status === 'in_progress') {
-        filter.status = { $in: ['assigned', 'in_progress'] };
-      } else if (status === 'awaiting_review') {
-        filter.status = { $in: ['submitted', 'resubmitted'] };
-      } else {
-        filter.status = status;
+    if (isMongoConnected()) {
+      try {
+        const filter = {};
+        if (status && status !== 'all') {
+          if (status === 'in_progress') {
+            filter.status = { $in: ['assigned', 'in_progress'] };
+          } else if (status === 'awaiting_review') {
+            filter.status = { $in: ['submitted', 'resubmitted'] };
+          } else {
+            filter.status = status;
+          }
+        }
+        if (priority && priority !== 'all') {
+          filter.priority = priority;
+        }
+        if (designerId && designerId !== 'all') {
+          filter.assignedDesignerId = designerId === 'unassigned' ? null : designerId;
+        }
+
+        const tasks = await Task.find(filter).sort({ createdAt: -1 });
+        if (tasks && tasks.length) return res.json(tasks);
+      } catch (e) {
+        console.warn('[Task Route] Mongo find error:', e.message);
       }
     }
 
+    const db = getJsonDb();
+    let tasks = Array.isArray(db.tasks) ? [...db.tasks] : [];
+    if (status && status !== 'all') {
+      if (status === 'in_progress') {
+        tasks = tasks.filter((t) => t.status === 'assigned' || t.status === 'in_progress');
+      } else if (status === 'awaiting_review') {
+        tasks = tasks.filter((t) => t.status === 'submitted' || t.status === 'resubmitted');
+      } else {
+        tasks = tasks.filter((t) => t.status === status);
+      }
+    }
     if (priority && priority !== 'all') {
-      filter.priority = priority;
+      tasks = tasks.filter((t) => t.priority === priority);
     }
-
     if (designerId && designerId !== 'all') {
-      filter.assignedDesignerId = designerId === 'unassigned' ? null : designerId;
+      tasks = tasks.filter((t) =>
+        designerId === 'unassigned' ? !t.assignedDesignerId : t.assignedDesignerId === designerId
+      );
     }
-
-    const tasks = await Task.find(filter).sort({ createdAt: -1 });
     return res.json(tasks);
   } catch (err) {
     return res.status(500).json({ error: 'Failed to fetch tasks: ' + err.message });
@@ -113,36 +139,54 @@ router.post('/', requireAdmin, async (req, res) => {
     let assignedAt = undefined;
 
     if (assignedDesignerId) {
-      const designer = await Designer.findOne({ id: assignedDesignerId });
-      if (designer) {
-        assignedDesignerName = designer.name;
+      const db = getJsonDb();
+      const designers = Array.isArray(db.designers) ? db.designers : [];
+      const d = designers.find((x) => x.id === assignedDesignerId);
+      if (d) {
+        assignedDesignerName = d.name;
         initialStatus = 'assigned';
         assignedAt = new Date().toISOString();
       }
     }
 
-    const newTask = new Task({
+    const newTaskData = {
       id: `task-${crypto.randomUUID().slice(0, 8)}`,
       title: title.trim(),
       client: client.trim(),
       brief: brief.trim(),
-      textContent: textContent ? textContent.trim() : '',
-      voiceBrief: voiceBrief || null,
-      deliverables: deliverables?.trim() || 'Standard design deliverables',
-      dimensions: dimensions?.trim() || '',
-      fileFormats: fileFormats?.trim() || 'AI, PSD, PDF, PNG',
-      priority: priority || 'medium',
-      deadline: deadline || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      textContent: textContent.trim(),
+      voiceBrief,
+      deliverables: deliverables ? deliverables.trim() : '',
+      dimensions: dimensions.trim(),
+      fileFormats: fileFormats.trim(),
+      priority,
       status: initialStatus,
       assignedDesignerId: assignedDesignerId || null,
       assignedDesignerName,
       assignedAt,
+      deadline: deadline || null,
       referenceFiles: Array.isArray(referenceFiles) ? referenceFiles : [],
       submissions: [],
+      createdAt: new Date().toISOString(),
+    };
+
+    if (isMongoConnected()) {
+      try {
+        const newTask = new Task(newTaskData);
+        await newTask.save();
+        return res.status(201).json(newTask);
+      } catch (e) {
+        console.warn('[Task Route] Mongo save error:', e.message);
+      }
+    }
+
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      db.tasks.unshift(newTaskData);
+      return db;
     });
 
-    await newTask.save();
-    return res.status(201).json(newTask);
+    return res.status(201).json(newTaskData);
   } catch (err) {
     return res.status(500).json({ error: 'Failed to create task: ' + err.message });
   }
@@ -151,55 +195,71 @@ router.post('/', requireAdmin, async (req, res) => {
 // ==========================================
 // GET /api/tasks/:id
 // ==========================================
-router.get('/:id', async (req, res) => {
+router.get('/:id', requireAnyAuth, async (req, res) => {
   try {
-    const task = await Task.findOne({ id: req.params.id });
-    if (!task) return res.status(404).json({ error: 'Task not found' });
-    return res.json(task);
+    if (isMongoConnected()) {
+      try {
+        const task = await Task.findOne({ id: req.params.id });
+        if (task) return res.json(task);
+      } catch (e) {
+        console.warn('[Task Route] Mongo findOne error:', e.message);
+      }
+    }
+
+    const db = getJsonDb();
+    const tasks = Array.isArray(db.tasks) ? db.tasks : [];
+    const found = tasks.find((t) => t.id === req.params.id);
+    if (!found) return res.status(404).json({ error: 'Task not found' });
+    return res.json(found);
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: 'Failed to fetch task: ' + err.message });
   }
 });
 
 // ==========================================
-// PUT /api/tasks/:id (Edit Task)
+// PUT /api/tasks/:id (Admin Update Task)
 // ==========================================
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
-    const task = await Task.findOne({ id: req.params.id });
-    if (!task) return res.status(404).json({ error: 'Task not found' });
-
     const body = req.body;
 
-    if (body.assignedDesignerId !== undefined) {
-      if (body.assignedDesignerId) {
-        const designer = await Designer.findOne({ id: body.assignedDesignerId });
-        task.assignedDesignerId = body.assignedDesignerId;
-        task.assignedDesignerName = designer ? designer.name : null;
-        if (!task.assignedAt) task.assignedAt = new Date().toISOString();
-        if (task.status === 'available') task.status = 'assigned';
-      } else {
-        task.assignedDesignerId = null;
-        task.assignedDesignerName = null;
-        task.assignedAt = undefined;
-        task.status = 'available';
+    if (isMongoConnected()) {
+      try {
+        const task = await Task.findOne({ id: req.params.id });
+        if (task) {
+          if (body.title !== undefined) task.title = body.title.trim();
+          if (body.client !== undefined) task.client = body.client.trim();
+          if (body.brief !== undefined) task.brief = body.brief.trim();
+          if (body.textContent !== undefined) task.textContent = body.textContent.trim();
+          if (body.voiceBrief !== undefined) task.voiceBrief = body.voiceBrief;
+          if (body.deliverables !== undefined) task.deliverables = body.deliverables.trim();
+          if (body.dimensions !== undefined) task.dimensions = body.dimensions.trim();
+          if (body.fileFormats !== undefined) task.fileFormats = body.fileFormats.trim();
+          if (body.priority !== undefined) task.priority = body.priority;
+          if (body.deadline !== undefined) task.deadline = body.deadline;
+          if (body.status !== undefined) task.status = body.status;
+          if (body.referenceFiles !== undefined) task.referenceFiles = body.referenceFiles;
+          await task.save();
+          return res.json(task);
+        }
+      } catch (e) {
+        console.warn('[Task Route] Mongo put error:', e.message);
       }
     }
 
-    if (body.title !== undefined) task.title = body.title.trim();
-    if (body.client !== undefined) task.client = body.client.trim();
-    if (body.brief !== undefined) task.brief = body.brief.trim();
-    if (body.textContent !== undefined) task.textContent = body.textContent.trim();
-    if (body.voiceBrief !== undefined) task.voiceBrief = body.voiceBrief;
-    if (body.deliverables !== undefined) task.deliverables = body.deliverables.trim();
-    if (body.dimensions !== undefined) task.dimensions = body.dimensions.trim();
-    if (body.fileFormats !== undefined) task.fileFormats = body.fileFormats.trim();
-    if (body.priority !== undefined) task.priority = body.priority;
-    if (body.deadline !== undefined) task.deadline = body.deadline;
-    if (body.referenceFiles !== undefined) task.referenceFiles = body.referenceFiles;
+    let updated = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      const idx = db.tasks.findIndex((t) => t.id === req.params.id);
+      if (idx !== -1) {
+        db.tasks[idx] = { ...db.tasks[idx], ...body };
+        updated = db.tasks[idx];
+      }
+      return db;
+    });
 
-    await task.save();
-    return res.json(task);
+    if (!updated) return res.status(404).json({ error: 'Task not found' });
+    return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: 'Failed to update task: ' + err.message });
   }
@@ -210,8 +270,25 @@ router.put('/:id', requireAdmin, async (req, res) => {
 // ==========================================
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    const deleted = await Task.findOneAndDelete({ id: req.params.id });
-    if (!deleted) return res.status(404).json({ error: 'Task not found' });
+    if (isMongoConnected()) {
+      try {
+        const deleted = await Task.findOneAndDelete({ id: req.params.id });
+        if (deleted) return res.json({ success: true, message: 'Task deleted successfully' });
+      } catch (e) {
+        console.warn('[Task Route] Mongo delete error:', e.message);
+      }
+    }
+
+    let found = false;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      const len = db.tasks.length;
+      db.tasks = db.tasks.filter((t) => t.id !== req.params.id);
+      found = db.tasks.length < len;
+      return db;
+    });
+
+    if (!found) return res.status(404).json({ error: 'Task not found' });
     return res.json({ success: true, message: 'Task deleted successfully' });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -224,20 +301,39 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 router.post('/:id/claim', requireDesigner, async (req, res) => {
   try {
     const designer = req.designer;
-    const task = await Task.findOne({ id: req.params.id });
 
-    if (!task) return res.status(404).json({ error: 'Task not found' });
-    if (task.status !== 'available' || task.assignedDesignerId) {
-      return res.status(409).json({ error: 'This task has already been claimed or assigned.' });
+    if (isMongoConnected()) {
+      try {
+        const task = await Task.findOne({ id: req.params.id });
+        if (task && (task.status === 'available' || !task.assignedDesignerId)) {
+          task.assignedDesignerId = designer.id;
+          task.assignedDesignerName = designer.name;
+          task.assignedAt = new Date().toISOString();
+          task.status = 'assigned';
+          await task.save();
+          return res.json({ success: true, message: `Task successfully claimed by ${designer.name}`, task });
+        }
+      } catch (e) {
+        console.warn('[Task Route] Mongo claim error:', e.message);
+      }
     }
 
-    task.assignedDesignerId = designer.id;
-    task.assignedDesignerName = designer.name;
-    task.assignedAt = new Date().toISOString();
-    task.status = 'assigned';
+    let updated = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      const idx = db.tasks.findIndex((t) => t.id === req.params.id);
+      if (idx !== -1) {
+        db.tasks[idx].assignedDesignerId = designer.id;
+        db.tasks[idx].assignedDesignerName = designer.name;
+        db.tasks[idx].assignedAt = new Date().toISOString();
+        db.tasks[idx].status = 'assigned';
+        updated = db.tasks[idx];
+      }
+      return db;
+    });
 
-    await task.save();
-    return res.json({ success: true, message: `Task successfully claimed by ${designer.name}`, task });
+    if (!updated) return res.status(404).json({ error: 'Task not found or unavailable' });
+    return res.json({ success: true, message: `Task successfully claimed by ${designer.name}`, task: updated });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -248,15 +344,32 @@ router.post('/:id/claim', requireDesigner, async (req, res) => {
 // ==========================================
 router.post('/:id/start', requireDesigner, async (req, res) => {
   try {
-    const task = await Task.findOne({ id: req.params.id });
-    if (!task) return res.status(404).json({ error: 'Task not found' });
-    if (task.assignedDesignerId !== req.designer.id) {
-      return res.status(403).json({ error: 'Forbidden: You are not assigned to this work.' });
+    if (isMongoConnected()) {
+      try {
+        const task = await Task.findOne({ id: req.params.id });
+        if (task && task.assignedDesignerId === req.designer.id) {
+          task.status = 'in_progress';
+          await task.save();
+          return res.json({ success: true, message: 'Task is now in progress', task });
+        }
+      } catch (e) {
+        console.warn('[Task Route] Mongo start error:', e.message);
+      }
     }
 
-    task.status = 'in_progress';
-    await task.save();
-    return res.json({ success: true, message: 'Task is now in progress', task });
+    let updated = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      const idx = db.tasks.findIndex((t) => t.id === req.params.id);
+      if (idx !== -1 && db.tasks[idx].assignedDesignerId === req.designer.id) {
+        db.tasks[idx].status = 'in_progress';
+        updated = db.tasks[idx];
+      }
+      return db;
+    });
+
+    if (!updated) return res.status(403).json({ error: 'Task not found or unauthorized' });
+    return res.json({ success: true, message: 'Task is now in progress', task: updated });
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -273,21 +386,10 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
       return res.status(400).json({ error: 'At least one deliverable file must be uploaded before submitting.' });
     }
 
-    const task = await Task.findOne({ id: req.params.id });
-    if (!task) return res.status(404).json({ error: 'Task not found.' });
-
-    if (task.assignedDesignerId !== req.designer.id) {
-      return res.status(403).json({ error: 'Forbidden: You are not assigned to this work.' });
-    }
-
-    const versionNumber = (task.submissions?.length || 0) + 1;
-    const versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
-    const newStatus = versionNumber === 1 ? 'submitted' : 'resubmitted';
-
     const newSubmission = {
       id: `sub-${crypto.randomUUID().slice(0, 8)}`,
-      version: versionNumber,
-      versionLabel,
+      version: 1,
+      versionLabel: 'Deliverables Submission',
       submittedAt: new Date().toISOString(),
       designerId: req.designer.id,
       designerName: req.designer.name,
@@ -297,16 +399,55 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
       reviewStatus: 'pending',
     };
 
-    task.submissions.unshift(newSubmission);
-    task.status = newStatus;
+    if (isMongoConnected()) {
+      try {
+        const task = await Task.findOne({ id: req.params.id });
+        if (task && task.assignedDesignerId === req.designer.id) {
+          const versionNumber = (task.submissions?.length || 0) + 1;
+          newSubmission.version = versionNumber;
+          newSubmission.versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
+          const newStatus = versionNumber === 1 ? 'submitted' : 'resubmitted';
 
-    await task.save();
+          if (!Array.isArray(task.submissions)) task.submissions = [];
+          task.submissions.unshift(newSubmission);
+          task.status = newStatus;
+          await task.save();
 
+          return res.json({
+            success: true,
+            message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
+            submission: newSubmission,
+            task,
+          });
+        }
+      } catch (e) {
+        console.warn('[Task Route] Mongo submit error:', e.message);
+      }
+    }
+
+    let updated = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      const idx = db.tasks.findIndex((t) => t.id === req.params.id);
+      if (idx !== -1 && db.tasks[idx].assignedDesignerId === req.designer.id) {
+        const t = db.tasks[idx];
+        const versionNumber = (t.submissions?.length || 0) + 1;
+        newSubmission.version = versionNumber;
+        newSubmission.versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
+        if (!Array.isArray(t.submissions)) t.submissions = [];
+        t.submissions.unshift(newSubmission);
+        t.status = versionNumber === 1 ? 'submitted' : 'resubmitted';
+        updated = t;
+      }
+      return db;
+    });
+
+    if (!updated) return res.status(403).json({ error: 'Forbidden: You are not assigned to this work.' });
     return res.json({
       success: true,
-      message: `${versionLabel} successfully submitted for admin review!`,
+      message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
       submission: newSubmission,
-      task,
+      task: updated,
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to submit work: ' + err.message });
@@ -314,7 +455,7 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
 });
 
 // ==========================================
-// POST /api/tasks/:id/review (Admin Review Decision with Voice & References)
+// POST /api/tasks/:id/review (Admin Review Decision)
 // ==========================================
 router.post('/:id/review', requireAdmin, async (req, res) => {
   try {
@@ -324,42 +465,70 @@ router.post('/:id/review', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Valid review action required (request_revision or approve).' });
     }
 
-    if (action === 'request_revision' && !feedback.trim() && !voiceFeedback) {
-      return res.status(400).json({ error: 'Feedback text or a voice message explaining requested changes is required.' });
+    if (isMongoConnected()) {
+      try {
+        const task = await Task.findOne({ id: req.params.id });
+        if (task && task.submissions && task.submissions.length > 0) {
+          const latestSubmission = task.submissions[0];
+          if (action === 'request_revision') {
+            latestSubmission.reviewStatus = 'revision_requested';
+            latestSubmission.adminFeedback = feedback.trim() || 'Please check requested revisions.';
+            latestSubmission.adminVoiceFeedback = voiceFeedback || null;
+            latestSubmission.adminFeedbackAttachments = Array.isArray(attachments) ? attachments : [];
+            latestSubmission.reviewedAt = new Date().toISOString();
+            task.status = 'revision_requested';
+          } else {
+            latestSubmission.reviewStatus = 'approved';
+            latestSubmission.adminFeedback = feedback.trim() || 'Work approved without modifications!';
+            if (voiceFeedback) latestSubmission.adminVoiceFeedback = voiceFeedback;
+            if (attachments?.length) latestSubmission.adminFeedbackAttachments = attachments;
+            latestSubmission.reviewedAt = new Date().toISOString();
+            task.status = 'completed';
+          }
+          await task.save();
+          return res.json({
+            success: true,
+            message: action === 'approve' ? 'Work approved!' : 'Revisions requested.',
+            task,
+          });
+        }
+      } catch (e) {
+        console.warn('[Task Route] Mongo review error:', e.message);
+      }
     }
 
-    const task = await Task.findOne({ id: req.params.id });
-    if (!task) return res.status(404).json({ error: 'Task not found.' });
+    let updated = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.tasks)) db.tasks = [];
+      const idx = db.tasks.findIndex((t) => t.id === req.params.id);
+      if (idx !== -1 && db.tasks[idx].submissions && db.tasks[idx].submissions.length > 0) {
+        const t = db.tasks[idx];
+        const latestSubmission = t.submissions[0];
+        if (action === 'request_revision') {
+          latestSubmission.reviewStatus = 'revision_requested';
+          latestSubmission.adminFeedback = feedback.trim() || 'Please check requested revisions.';
+          latestSubmission.adminVoiceFeedback = voiceFeedback || null;
+          latestSubmission.adminFeedbackAttachments = Array.isArray(attachments) ? attachments : [];
+          latestSubmission.reviewedAt = new Date().toISOString();
+          t.status = 'revision_requested';
+        } else {
+          latestSubmission.reviewStatus = 'approved';
+          latestSubmission.adminFeedback = feedback.trim() || 'Work approved!';
+          if (voiceFeedback) latestSubmission.adminVoiceFeedback = voiceFeedback;
+          if (attachments?.length) latestSubmission.adminFeedbackAttachments = attachments;
+          latestSubmission.reviewedAt = new Date().toISOString();
+          t.status = 'completed';
+        }
+        updated = t;
+      }
+      return db;
+    });
 
-    if (!task.submissions || task.submissions.length === 0) {
-      return res.status(400).json({ error: 'Cannot review a task without any submitted deliverables.' });
-    }
-
-    // Latest submission is at index 0
-    const latestSubmission = task.submissions[0];
-
-    if (action === 'request_revision') {
-      latestSubmission.reviewStatus = 'revision_requested';
-      latestSubmission.adminFeedback = feedback.trim() || 'Please listen to the attached voice message and reference documents for required revisions.';
-      latestSubmission.adminVoiceFeedback = voiceFeedback || null;
-      latestSubmission.adminFeedbackAttachments = Array.isArray(attachments) ? attachments : [];
-      latestSubmission.reviewedAt = new Date().toISOString();
-      task.status = 'revision_requested';
-    } else if (action === 'approve') {
-      latestSubmission.reviewStatus = 'approved';
-      latestSubmission.adminFeedback = feedback.trim() || 'Work approved without modifications. Excellent execution!';
-      if (voiceFeedback) latestSubmission.adminVoiceFeedback = voiceFeedback;
-      if (attachments?.length) latestSubmission.adminFeedbackAttachments = attachments;
-      latestSubmission.reviewedAt = new Date().toISOString();
-      task.status = 'completed';
-    }
-
-    await task.save();
-
+    if (!updated) return res.status(404).json({ error: 'Task or submissions not found' });
     return res.json({
       success: true,
-      message: action === 'approve' ? 'Work approved and marked as Completed!' : 'Revisions requested and notified to designer.',
-      task,
+      message: action === 'approve' ? 'Work approved!' : 'Revisions requested.',
+      task: updated,
     });
   } catch (err) {
     return res.status(500).json({ error: 'Failed to record task review: ' + err.message });

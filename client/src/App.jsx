@@ -133,16 +133,13 @@ function AdminPage() {
 // 3. Designer Studio Route
 // ==========================================
 function DesignerPage() {
-  const [searchParams] = useSearchParams();
   let token = null;
-  try {
-    if (searchParams && typeof searchParams.get === 'function') {
-      token = searchParams.get('token');
-    } else if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && window.location?.search) {
+    try {
       token = new URLSearchParams(window.location.search).get('token');
+    } catch {
+      token = null;
     }
-  } catch {
-    token = null;
   }
 
   return (

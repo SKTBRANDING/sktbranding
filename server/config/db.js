@@ -2,18 +2,25 @@ const mongoose = require('mongoose');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
+// Disable Mongoose command buffering so queries fail-fast when offline
+// instead of hanging for 10000ms
+mongoose.set('bufferCommands', false);
+
 async function connectDB() {
-  const uri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sktbranding';
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    console.warn('[MongoDB] MONGODB_URI not set. Running in resilient JSON dataset fallback mode.');
+    return null;
+  }
   
   try {
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 3000,
     });
     console.log(`[MongoDB] Connected successfully to: ${conn.connection.host}/${conn.connection.name}`);
     return conn;
   } catch (err) {
-    console.error(`[MongoDB] Connection error: ${err.message}`);
-    console.warn('[MongoDB] Ensure local MongoDB daemon is running (mongod) or configure MONGODB_URI with MongoDB Atlas in server/.env.');
+    console.warn(`[MongoDB] Connection failed (${err.message}). Seamlessly utilizing resilient JSON fallback dataset.`);
     return null;
   }
 }

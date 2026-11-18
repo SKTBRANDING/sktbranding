@@ -25,7 +25,7 @@ export default function Footer({ settings }: FooterProps) {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-start justify-between">
           {/* Logo & Tagline */}
           <div className="md:col-span-5 space-y-4">
-            <Link href="/" className="inline-flex items-center gap-2.5">
+            <Link to="/" className="inline-flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#FF4D00]/40 flex items-center justify-center">
                 <span className="text-[#FF4D00] font-black text-base">S</span>
               </div>

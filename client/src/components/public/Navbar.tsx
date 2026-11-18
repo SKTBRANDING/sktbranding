@@ -41,7 +41,7 @@ export default function Navbar({ settings }: NavbarProps) {
       <div className="max-w-7xl mx-auto px-5 sm:px-8 flex items-center justify-between">
         {/* Logo */}
         <Link
-          href="/"
+          to="/"
           className="group flex items-center gap-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF4D00] rounded-lg"
           aria-label="SKT Branding Home"
         >

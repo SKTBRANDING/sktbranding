@@ -37,10 +37,10 @@ export default function DesignerRoot({
   useEffect(() => {
     let tokenFromUrl: string | null = null;
     try {
-      if (searchParams && typeof searchParams.get === 'function') {
-        tokenFromUrl = searchParams.get('token');
-      } else if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && window.location?.search) {
         tokenFromUrl = new URLSearchParams(window.location.search).get('token');
+      } else if (searchParams && typeof (searchParams as any).get === 'function') {
+        tokenFromUrl = (searchParams as any).get('token');
       }
     } catch {
       tokenFromUrl = null;

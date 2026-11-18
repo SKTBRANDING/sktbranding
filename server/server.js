@@ -88,14 +88,16 @@ app.use('/api/content', contentRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // Static client production build serving
+const distPath = path.join(__dirname, '..', 'dist');
 const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
-if (fs.existsSync(clientDistPath)) {
-  app.use(express.static(clientDistPath));
+const staticPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(clientDistPath) ? clientDistPath : null);
+if (staticPath) {
+  app.use(express.static(staticPath));
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
       return next();
     }
-    res.sendFile(path.join(clientDistPath, 'index.html'));
+    res.sendFile(path.join(staticPath, 'index.html'));
   });
 }
 

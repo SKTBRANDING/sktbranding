@@ -3,9 +3,10 @@ const router = express.Router();
 const crypto = require('crypto');
 const Designer = require('../models/Designer');
 const { requireAdmin } = require('../middleware/auth');
+const { isMongoConnected, getJsonDb, saveJsonDb, findDesignerFromMemory } = require('../utils/dbFallback');
 
 function generateDesignerToken(name) {
-  const clean = name.toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 10);
+  const clean = (name || 'designer').toLowerCase().replace(/[^a-z0-9]/g, '_').slice(0, 10);
   const entropy = crypto.randomBytes(8).toString('hex');
   return `dsg_${clean}_${entropy}`;
 }
@@ -26,31 +27,43 @@ async function findDesignerByTokenOrInput(rawInput) {
     }
   }
 
-  // 1. Exact match by token
-  let designer = await Designer.findOne({ token: str, status: 'active' });
-  if (designer) return designer;
+  // 1. Try MongoDB if connected
+  if (isMongoConnected()) {
+    try {
+      let designer = await Designer.findOne({ token: str, status: 'active' });
+      if (designer) return designer;
 
-  // 2. Case-insensitive exact match
-  designer = await Designer.findOne({
-    token: { $regex: `^${str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
-    status: 'active',
-  });
-  if (designer) return designer;
+      designer = await Designer.findOne({
+        token: { $regex: `^${str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' },
+        status: 'active',
+      });
+      if (designer) return designer;
 
-  // 3. Prefix match if at least 8 chars (e.g. 'dsg_aria_7' matching 'dsg_aria_7f8e91a2bc4d')
-  if (str.length >= 8) {
-    const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    designer = await Designer.findOne({
-      token: { $regex: `^${escaped}`, $options: 'i' },
-      status: 'active',
-    });
-    if (designer) return designer;
+      if (str.length >= 8) {
+        const escaped = str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        designer = await Designer.findOne({
+          token: { $regex: `^${escaped}`, $options: 'i' },
+          status: 'active',
+        });
+        if (designer) return designer;
+      }
+
+      if (str.includes('@')) {
+        designer = await Designer.findOne({ email: str.toLowerCase(), status: 'active' });
+        if (designer) return designer;
+      }
+    } catch (e) {
+      console.warn('[Designer Route] Mongo findOne error, falling back to db.json:', e.message);
+    }
   }
 
-  // 4. Match by email
-  if (str.includes('@')) {
-    designer = await Designer.findOne({ email: str.toLowerCase(), status: 'active' });
-    if (designer) return designer;
+  // 2. Fallback to resilient JSON dataset
+  const memoryDesigner = findDesignerFromMemory(str);
+  if (memoryDesigner) {
+    return {
+      ...memoryDesigner,
+      save: async () => {},
+    };
   }
 
   return null;
@@ -71,8 +84,10 @@ router.get('/verify', async (req, res) => {
       return res.status(401).json({ error: 'Invalid, deactivated, or revoked invitation link.' });
     }
 
-    designer.lastActiveAt = new Date();
-    await designer.save();
+    if (typeof designer.save === 'function') {
+      designer.lastActiveAt = new Date();
+      await designer.save();
+    }
 
     return res.json({
       valid: true,
@@ -105,8 +120,10 @@ router.post('/auth', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid or revoked designer invitation token.' });
     }
 
-    designer.lastActiveAt = new Date();
-    await designer.save();
+    if (typeof designer.save === 'function') {
+      designer.lastActiveAt = new Date();
+      await designer.save();
+    }
 
     res.cookie('skt_designer_session', designer.token, {
       httpOnly: true,
@@ -175,8 +192,18 @@ router.delete('/auth', (req, res) => {
 // ==========================================
 router.get('/', requireAdmin, async (req, res) => {
   try {
-    const designers = await Designer.find().sort({ createdAt: -1 });
-    return res.json(designers);
+    if (isMongoConnected()) {
+      try {
+        const designers = await Designer.find().sort({ createdAt: -1 });
+        if (designers && designers.length) {
+          return res.json(designers);
+        }
+      } catch (e) {
+        console.warn('[Designer Route] Mongo find error:', e.message);
+      }
+    }
+    const db = getJsonDb();
+    return res.json(db.designers || []);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -193,14 +220,8 @@ router.post('/', requireAdmin, async (req, res) => {
       return res.status(400).json({ error: 'Designer name and email are required.' });
     }
 
-    const existing = await Designer.findOne({ email: email.trim().toLowerCase() });
-    if (existing) {
-      return res.status(409).json({ error: 'A designer with this email address already exists.' });
-    }
-
     const token = generateDesignerToken(name);
-
-    const newDesigner = new Designer({
+    const newDesignerData = {
       id: `des-${crypto.randomUUID().slice(0, 8)}`,
       name: name.trim(),
       email: email.trim().toLowerCase(),
@@ -209,10 +230,32 @@ router.post('/', requireAdmin, async (req, res) => {
       token,
       status: 'active',
       notes: notes.trim(),
+      createdAt: new Date().toISOString(),
+      lastActiveAt: new Date().toISOString(),
+    };
+
+    if (isMongoConnected()) {
+      try {
+        const existing = await Designer.findOne({ email: email.trim().toLowerCase() });
+        if (existing) {
+          return res.status(409).json({ error: 'A designer with this email address already exists.' });
+        }
+        const newDesigner = new Designer(newDesignerData);
+        await newDesigner.save();
+        return res.status(201).json(newDesigner);
+      } catch (e) {
+        console.warn('[Designer Route] Mongo save failed, falling back to db.json:', e.message);
+      }
+    }
+
+    // Save in json fallback
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.designers)) db.designers = [];
+      db.designers.unshift(newDesignerData);
+      return db;
     });
 
-    await newDesigner.save();
-    return res.status(201).json(newDesigner);
+    return res.status(201).json(newDesignerData);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -223,20 +266,49 @@ router.post('/', requireAdmin, async (req, res) => {
 // ==========================================
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
-    const designer = await Designer.findOne({ id: req.params.id });
-    if (!designer) return res.status(404).json({ error: 'Designer not found' });
-
     const { name, email, specialty, avatar, status, notes } = req.body;
 
-    if (name !== undefined) designer.name = name.trim();
-    if (email !== undefined) designer.email = email.trim().toLowerCase();
-    if (specialty !== undefined) designer.specialty = specialty.trim();
-    if (avatar !== undefined) designer.avatar = avatar.trim();
-    if (status !== undefined) designer.status = status;
-    if (notes !== undefined) designer.notes = notes.trim();
+    if (isMongoConnected()) {
+      try {
+        const designer = await Designer.findOne({ id: req.params.id });
+        if (designer) {
+          if (name !== undefined) designer.name = name.trim();
+          if (email !== undefined) designer.email = email.trim().toLowerCase();
+          if (specialty !== undefined) designer.specialty = specialty.trim();
+          if (avatar !== undefined) designer.avatar = avatar.trim();
+          if (status !== undefined) designer.status = status;
+          if (notes !== undefined) designer.notes = notes.trim();
+          await designer.save();
+          return res.json(designer);
+        }
+      } catch (e) {
+        console.warn('[Designer Route] Mongo put error:', e.message);
+      }
+    }
 
-    await designer.save();
-    return res.json(designer);
+    let updatedDesigner = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.designers)) db.designers = [];
+      const idx = db.designers.findIndex((d) => d.id === req.params.id);
+      if (idx !== -1) {
+        db.designers[idx] = {
+          ...db.designers[idx],
+          ...(name !== undefined && { name: name.trim() }),
+          ...(email !== undefined && { email: email.trim().toLowerCase() }),
+          ...(specialty !== undefined && { specialty: specialty.trim() }),
+          ...(avatar !== undefined && { avatar: avatar.trim() }),
+          ...(status !== undefined && { status }),
+          ...(notes !== undefined && { notes: notes.trim() }),
+        };
+        updatedDesigner = db.designers[idx];
+      }
+      return db;
+    });
+
+    if (!updatedDesigner) {
+      return res.status(404).json({ error: 'Designer not found' });
+    }
+    return res.json(updatedDesigner);
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
@@ -245,40 +317,51 @@ router.put('/:id', requireAdmin, async (req, res) => {
 // ==========================================
 // POST /api/designers/:id/token & /api/designers/:id/regenerate-token
 // ==========================================
-router.post('/:id/token', requireAdmin, async (req, res) => {
+router.post(['/:id/token', '/:id/regenerate-token'], requireAdmin, async (req, res) => {
   try {
-    const designer = await Designer.findOne({ id: req.params.id });
-    if (!designer) return res.status(404).json({ error: 'Designer not found' });
+    const id = req.params.id;
 
-    designer.token = generateDesignerToken(designer.name);
-    designer.status = 'active';
+    if (isMongoConnected()) {
+      try {
+        const designer = await Designer.findOne({ id });
+        if (designer) {
+          designer.token = generateDesignerToken(designer.name);
+          designer.status = 'active';
+          await designer.save();
+          return res.json({
+            success: true,
+            message: 'Access link regenerated successfully.',
+            token: designer.token,
+            designer,
+          });
+        }
+      } catch (e) {
+        console.warn('[Designer Route] Mongo token regen error:', e.message);
+      }
+    }
 
-    await designer.save();
-    return res.json({
-      success: true,
-      message: 'Access link regenerated successfully.',
-      token: designer.token,
-      designer,
+    let updatedDesigner = null;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.designers)) db.designers = [];
+      const idx = db.designers.findIndex((d) => d.id === id);
+      if (idx !== -1) {
+        const newToken = generateDesignerToken(db.designers[idx].name);
+        db.designers[idx].token = newToken;
+        db.designers[idx].status = 'active';
+        updatedDesigner = db.designers[idx];
+      }
+      return db;
     });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
 
-router.post('/:id/regenerate-token', requireAdmin, async (req, res) => {
-  try {
-    const designer = await Designer.findOne({ id: req.params.id });
-    if (!designer) return res.status(404).json({ error: 'Designer not found' });
+    if (!updatedDesigner) {
+      return res.status(404).json({ error: 'Designer not found' });
+    }
 
-    designer.token = generateDesignerToken(designer.name);
-    designer.status = 'active';
-
-    await designer.save();
     return res.json({
       success: true,
       message: 'Access link regenerated successfully.',
-      token: designer.token,
-      designer,
+      token: updatedDesigner.token,
+      designer: updatedDesigner,
     });
   } catch (err) {
     return res.status(500).json({ error: err.message });
@@ -290,8 +373,29 @@ router.post('/:id/regenerate-token', requireAdmin, async (req, res) => {
 // ==========================================
 router.delete('/:id', requireAdmin, async (req, res) => {
   try {
-    const deleted = await Designer.findOneAndDelete({ id: req.params.id });
-    if (!deleted) return res.status(404).json({ error: 'Designer not found' });
+    if (isMongoConnected()) {
+      try {
+        const deleted = await Designer.findOneAndDelete({ id: req.params.id });
+        if (deleted) {
+          return res.json({ success: true, message: 'Designer removed successfully.' });
+        }
+      } catch (e) {
+        console.warn('[Designer Route] Mongo delete error:', e.message);
+      }
+    }
+
+    let found = false;
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.designers)) db.designers = [];
+      const initialLen = db.designers.length;
+      db.designers = db.designers.filter((d) => d.id !== req.params.id);
+      found = db.designers.length < initialLen;
+      return db;
+    });
+
+    if (!found) {
+      return res.status(404).json({ error: 'Designer not found' });
+    }
     return res.json({ success: true, message: 'Designer removed successfully.' });
   } catch (err) {
     return res.status(500).json({ error: err.message });

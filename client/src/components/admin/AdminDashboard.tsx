@@ -186,7 +186,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
           </button>
 
           {/* Logo */}
-          <Link href="/admin" className="flex items-center gap-2.5">
+          <Link to="/admin" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#141414] border border-[#FF4D00]/50 flex items-center justify-center shadow-[0_0_12px_rgba(255,77,0,0.3)]">
               <span className="text-[#FF4D00] font-black text-sm">S</span>
             </div>

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Designer = require('../models/Designer');
+const { isMongoConnected, findDesignerFromMemory } = require('../utils/dbFallback');
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const JWT_SECRET = process.env.JWT_SECRET || 'skt_luxury_branding_jwt_secret_key_2026';
@@ -50,20 +51,35 @@ async function requireDesigner(req, res, next) {
       req.headers['x-designer-token'] ||
       (req.headers.authorization ? req.headers.authorization.replace('Bearer ', '') : null) ||
       req.query.token ||
+      req.cookies?.skt_designer_session ||
       req.cookies?.designer_token;
 
     if (!token) {
       return res.status(401).json({ error: 'Unauthorized. Designer access token required.' });
     }
 
-    const designer = await Designer.findOne({ token, status: 'active' });
+    let designer = null;
+    if (isMongoConnected()) {
+      try {
+        designer = await Designer.findOne({ token, status: 'active' });
+      } catch (e) {
+        console.warn('[Auth] Mongo designer lookup failed:', e.message);
+      }
+    }
+
+    if (!designer) {
+      designer = findDesignerFromMemory(token);
+    }
+
     if (!designer) {
       return res.status(401).json({ error: 'Invalid or revoked designer invitation link.' });
     }
 
     // Update last active timestamp
-    designer.lastActiveAt = new Date();
-    await designer.save();
+    if (typeof designer.save === 'function') {
+      designer.lastActiveAt = new Date();
+      await designer.save();
+    }
 
     req.designer = designer;
     next();

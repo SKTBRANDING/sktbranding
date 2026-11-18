@@ -55,7 +55,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
       <div className="w-full max-w-md relative z-10">
         {/* Branding Header */}
         <div className="text-center mb-8 space-y-3">
-          <Link href="/" className="inline-flex items-center gap-2.5 group">
+          <Link to="/" className="inline-flex items-center gap-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#FF4D00]/40 flex items-center justify-center group-hover:border-[#FF4D00] transition-colors shadow-[0_0_20px_rgba(255,77,0,0.3)]">
               <span className="text-[#FF4D00] font-black text-xl">S</span>
             </div>
