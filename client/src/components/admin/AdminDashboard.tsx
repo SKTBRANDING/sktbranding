@@ -20,9 +20,10 @@ import {
   Bell,
   Briefcase,
   Users,
+  Receipt,
 } from 'lucide-react';
 import { DatabaseSchema, Inquiry } from '@/types';
-import { clearAdminToken } from '@/lib/adminApi';
+import { clearAdminToken, adminFetch } from '@/lib/adminApi';
 import AdminOverview from './AdminOverview';
 import AdminProjects from './AdminProjects';
 import AdminServices from './AdminServices';
@@ -32,6 +33,7 @@ import AdminInquiries from './AdminInquiries';
 import AdminSettings from './AdminSettings';
 import AdminTasks from './AdminTasks';
 import AdminDesigners from './AdminDesigners';
+import AdminBilling from './AdminBilling';
 
 interface AdminDashboardProps {
   initialData: DatabaseSchema;
@@ -65,7 +67,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
   // Refresh entire database from server
   const refreshData = async () => {
     try {
-      const [projRes, servRes, contRes, testRes, inqRes, settRes, taskRes, desRes] = await Promise.all([
+      const [projRes, servRes, contRes, testRes, inqRes, settRes, taskRes, desRes, invRes] = await Promise.all([
         adminFetch('/api/projects?all=true'),
         adminFetch('/api/services?all=true'),
         adminFetch('/api/content'),
@@ -74,9 +76,10 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         adminFetch('/api/settings'),
         adminFetch('/api/tasks'),
         adminFetch('/api/designers'),
+        adminFetch('/api/invoices'),
       ]);
 
-      const [projects, services, content, testimonials, inquiries, settings, tasks, designers] = await Promise.all([
+      const [projects, services, content, testimonials, inquiries, settings, tasks, designers, invoices] = await Promise.all([
         projRes.json(),
         servRes.json(),
         contRes.json(),
@@ -85,6 +88,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         settRes.json(),
         taskRes.json(),
         desRes.json(),
+        invRes.json(),
       ]);
 
       setData({
@@ -96,6 +100,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         settings: settings || data.settings,
         tasks: Array.isArray(tasks) ? tasks : data.tasks || [],
         designers: Array.isArray(designers) ? designers : data.designers || [],
+        invoices: Array.isArray(invoices) ? invoices : data.invoices || [],
       });
     } catch (err) {
       console.error('Error refreshing admin data:', err);
@@ -115,9 +120,17 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
 
   const newInquiriesCount = (data.inquiries || []).filter((i) => i.status === 'New').length;
   const awaitingReviewTasksCount = (data.tasks || []).filter((t) => t.status === 'submitted' || t.status === 'resubmitted').length;
+  const pendingInvoicesCount = (data.invoices || []).filter((inv) => inv.status === 'pending' || inv.status === 'overdue').length;
 
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    {
+      id: 'billing',
+      label: 'Client Billing',
+      icon: Receipt,
+      count: (data.invoices || []).length,
+      badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} Due` : undefined,
+    },
     {
       id: 'tasks',
       label: 'Work Management',
@@ -377,6 +390,15 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
               onViewDesignerTasks={(designerId) => {
                 setActiveTab('tasks');
               }}
+            />
+          )}
+
+          {activeTab === 'billing' && (
+            <AdminBilling
+              invoices={data.invoices || []}
+              projects={data.projects || []}
+              onRefresh={refreshData}
+              showToast={showToast}
             />
           )}
 

@@ -16,6 +16,7 @@ import {
   Briefcase,
   Users,
   Upload,
+  Receipt,
 } from 'lucide-react';
 import { DatabaseSchema, Inquiry } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
@@ -78,6 +79,15 @@ export default function AdminOverview({
               </button>
             )}
 
+            <button
+              type="button"
+              onClick={() => onNavigateTab('billing')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full bg-[#1c1c1c] hover:bg-white/10 border border-[#FF4D00]/40 text-xs font-semibold uppercase tracking-wider text-white transition-colors"
+            >
+              <Receipt className="w-3.5 h-3.5 text-[#FF4D00]" />
+              <span>Client Billing</span>
+            </button>
+
             <a
               href="/"
               target="_blank"
@@ -92,7 +102,33 @@ export default function AdminOverview({
       </div>
 
       {/* KPI Stat Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Client Billing KPI */}
+        <div
+          onClick={() => onNavigateTab('billing')}
+          className="luxury-card rounded-2xl p-6 border border-white/10 hover:border-[#FF4D00]/50 transition-all cursor-pointer group relative overflow-hidden"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-xs uppercase tracking-wider text-[#A3A3A3] font-semibold">
+              Client Billing
+            </span>
+            <div className="w-10 h-10 rounded-xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center text-[#FF4D00] group-hover:scale-110 transition-transform">
+              <Receipt className="w-5 h-5" />
+            </div>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-extrabold text-white tracking-tight">
+              ${(data.invoices || []).reduce((acc, inv) => acc + Number(inv.total || 0), 0).toLocaleString()}
+            </span>
+            <span className="text-xs text-amber-400">
+              ${(data.invoices || []).reduce((acc, inv) => acc + Number(inv.balanceDue || 0), 0).toLocaleString()} due
+            </span>
+          </div>
+          <span className="inline-block mt-3 text-xs text-[#FF4D00] group-hover:underline">
+            {(data.invoices || []).length} invoices • Manage billing →
+          </span>
+        </div>
+
         {/* Work Tasks KPI */}
         <div
           onClick={() => onNavigateTab('tasks')}

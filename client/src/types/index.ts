@@ -233,4 +233,62 @@ export interface DatabaseSchema {
   settings: AgencySettings;
   designers: Designer[];
   tasks: Task[];
+  invoices?: Invoice[];
+}
+
+export type InvoiceStatus = 'draft' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';
+
+export type PaymentMethod = 
+  | 'bank_transfer'
+  | 'credit_card'
+  | 'upi'
+  | 'paypal'
+  | 'stripe'
+  | 'cash'
+  | 'crypto';
+
+export interface InvoiceItem {
+  id: string;
+  description: string;
+  category?: string; // 'Branding' | 'Logo Design' | 'Social Media' | 'Packaging' | 'Web Design' | 'Motion' | 'Consulting'
+  quantity: number;
+  rate: number;
+  amount: number;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNumber: string; // e.g. "SKT-INV-2026-001"
+  clientId?: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  clientAddress?: string;
+  clientCompany?: string;
+  
+  projectId?: string;
+  projectName?: string; // e.g. "SOCIAL MEDIA POSTERS" or "Aethelgard Botanical Spirits"
+  
+  issueDate: string; // ISO date string (YYYY-MM-DD)
+  dueDate: string;   // ISO date string (YYYY-MM-DD)
+  
+  items: InvoiceItem[];
+  subtotal: number;
+  taxRate: number;      // e.g. 5, 10, 18 percent
+  taxAmount: number;
+  discountRate: number; // percentage discount
+  discountAmount: number;
+  total: number;
+  amountPaid: number;
+  balanceDue: number;
+  
+  status: InvoiceStatus;
+  currency: string; // 'USD' | 'INR' | 'EUR' | 'AED' | 'GBP'
+  paymentMethod?: PaymentMethod;
+  paymentDetails?: string; // Bank account, SWIFT, UPI, IBAN
+  notes?: string;          // Terms & conditions, payment terms
+  
+  paidAt?: string;
+  createdAt: string;
+  updatedAt: string;
 }

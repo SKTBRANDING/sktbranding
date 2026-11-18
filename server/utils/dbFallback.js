@@ -92,12 +92,17 @@ function getJsonDb() {
       settings: {},
       designers: DEFAULT_DESIGNERS,
       tasks: [],
+      invoices: [],
     };
   }
 
   // Ensure default designers exist
   if (!Array.isArray(memoryDb.designers) || memoryDb.designers.length === 0) {
     memoryDb.designers = [...DEFAULT_DESIGNERS];
+  }
+
+  if (!Array.isArray(memoryDb.invoices)) {
+    memoryDb.invoices = [];
   }
 
   return memoryDb;
