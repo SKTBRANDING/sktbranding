@@ -114,3 +114,24 @@ body {
 .cta-glow-bg {
   background: radial-gradient(ellipse at 50% 100%, rgba(255, 77, 0, 0.22) 0%, rgba(255, 122, 0, 0.08) 40%, transparent 75%);
 }
+
+/* Rightward Marquee Animation */
+@keyframes marquee-right {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+.animate-marquee-right {
+  display: flex;
+  width: max-content;
+  animation: marquee-right 28s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-right:hover {
+  animation-play-state: paused;
+}

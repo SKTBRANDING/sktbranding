@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { DatabaseSchema } from '@/types';
 import Navbar from './Navbar';
 import Hero from './Hero';
+import LogoMarquee from './LogoMarquee';
 import Portfolio from './Portfolio';
 import ServicesSection from './ServicesSection';
 import AboutSection from './AboutSection';
@@ -30,6 +31,9 @@ export default function PublicWebsite({ initialData }: PublicWebsiteProps) {
 
       {/* 2. Dramatic Hero Section with Orange Creative Visual */}
       <Hero content={initialData.content.hero} />
+
+      {/* 2.5 Infinite Auto-Sliding Brand Logos (Swiping Right) */}
+      <LogoMarquee />
 
       {/* 3. Selected Works Portfolio with Filters & Case Study Modal */}
       <Portfolio projects={publishedProjects} />
