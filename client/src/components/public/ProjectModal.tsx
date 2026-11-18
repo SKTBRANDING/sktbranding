@@ -1,8 +1,39 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { X, ExternalLink, Tag, Calendar, User, CheckCircle2, Video, Play, Smartphone, Monitor } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { X, ExternalLink, Tag, Calendar, User, CheckCircle2, Video, Play, Smartphone, Monitor, Sparkles } from 'lucide-react';
 import { Project } from '@/types';
+
+function ModalMediaImage({ src, alt, className = '' }: { src: string; alt: string; className?: string }) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className={`relative w-full h-full bg-[#111] overflow-hidden ${className}`}>
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] via-white/[0.08] to-white/[0.02] animate-pulse" />
+      )}
+      {hasError ? (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#141414] p-4 text-center">
+          <Sparkles className="w-5 h-5 text-[#FF4D00]/50 mb-1" />
+          <span className="text-xs text-[#737373]">{alt}</span>
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          className={`w-full h-full object-cover object-center transition-opacity duration-500 ${
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
+    </div>
+  );
+}
 
 function isVideoFile(url?: string): boolean {
   if (!url) return false;
@@ -128,11 +159,9 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
 
           {/* Hero Cover Image */}
           <div className={`rounded-2xl overflow-hidden border border-white/10 shadow-lg ${project.category === 'Social Media' ? 'aspect-[16/9]' : 'aspect-[16/10]'} bg-[#141414]`}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <ModalMediaImage
               src={project.coverImage}
               alt={project.imageAlt || project.title}
-              className="w-full h-full object-cover object-center"
             />
           </div>
 
@@ -272,12 +301,9 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                           className="w-full h-full object-cover bg-black"
                         />
                       ) : (
-                        /* eslint-disable-next-line @next/next/no-img-element */
-                        <img
+                        <ModalMediaImage
                           src={mediaUrl}
                           alt={`${project.title} - Showcase Exhibit ${i + 1}`}
-                          className="w-full h-full object-cover object-center"
-                          loading="lazy"
                         />
                       )}
                     </div>

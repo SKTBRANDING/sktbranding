@@ -18,6 +18,39 @@ const CATEGORIES: ProjectCategory[] = [
   'Web Design',
 ];
 
+function ProjectCardImage({ src, alt }: { src: string; alt: string }) {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
+
+  return (
+    <div className="relative w-full h-full bg-[#0a0a0a]">
+      {/* Luxury shimmer placeholder while image loads */}
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] via-white/[0.08] to-white/[0.02] animate-pulse" />
+      )}
+
+      {hasError ? (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-[#101010] p-4 text-center">
+          <Sparkles className="w-5 h-5 text-[#FF4D00]/50 mb-1" />
+          <span className="text-[10px] font-mono text-[#737373] line-clamp-1">{alt}</span>
+        </div>
+      ) : (
+        <img
+          src={src}
+          alt={alt}
+          loading="lazy"
+          decoding="async"
+          onLoad={() => setIsLoaded(true)}
+          onError={() => setHasError(true)}
+          className={`w-full h-full object-cover object-center filter brightness-95 contrast-105 group-hover:scale-105 transition-all duration-700 ease-out ${
+            isLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+      )}
+    </div>
+  );
+}
+
 export default function Portfolio({ projects }: PortfolioProps) {
   const [activeCategory, setActiveCategory] = useState<ProjectCategory>('All');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -107,12 +140,9 @@ export default function Portfolio({ projects }: PortfolioProps) {
                   <div className="luxury-card rounded-3xl overflow-hidden p-3.5 flex flex-col h-full group-hover:border-[#FF4D00]/50 transition-all duration-500">
                     {/* Image Container */}
                     <div className={`relative ${aspectRatioClass} w-full rounded-2xl overflow-hidden bg-[#0a0a0a]`}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <ProjectCardImage
                         src={project.coverImage}
                         alt={project.imageAlt || project.title}
-                        className="w-full h-full object-cover object-center filter brightness-95 contrast-105 group-hover:scale-105 transition-transform duration-700 ease-out"
-                        loading="lazy"
                       />
 
                       {/* Ambient hover overlay */}

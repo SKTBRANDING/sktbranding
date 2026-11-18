@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowDown, ArrowUpRight, Sparkles } from 'lucide-react';
 import { WebsiteContent } from '@/types';
 
@@ -9,6 +9,7 @@ interface HeroProps {
 }
 
 export default function Hero({ content }: HeroProps) {
+  const [heroImageError, setHeroImageError] = useState(false);
   const headline = content?.headline || 'Design That Makes\nYour Brand Stand Out.';
   const supportingCopy =
     content?.supportingCopy ||
@@ -139,13 +140,14 @@ export default function Hero({ content }: HeroProps) {
               />
               
               {/* Visual artwork: Image or 3D composition */}
-              {heroImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
+              {heroImage && !heroImageError ? (
                 <img
                   src={heroImage}
                   alt="SKT Branding Creative Direction Visual"
                   className="w-full h-full object-cover object-center filter contrast-110 brightness-95 transition-transform duration-700 group-hover:scale-105"
                   loading="eager"
+                  decoding="async"
+                  onError={() => setHeroImageError(true)}
                 />
               ) : (
                 <div className="w-full h-full flex flex-col justify-between p-8 bg-gradient-to-br from-[#1a1a1a] via-[#0d0d0d] to-[#050505]">

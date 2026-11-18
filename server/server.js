@@ -37,9 +37,33 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cookieParser());
 
-// Static uploads serving
+// Static uploads serving with WebP auto-rewrite & 1-year immutable caching
 const uploadsPath = path.join(__dirname, '..', 'public', 'uploads');
-app.use('/uploads', express.static(uploadsPath));
+app.use(
+  '/uploads',
+  (req, res, next) => {
+    // If an older .png or .jpg URL is requested but a compressed .webp exists, serve the .webp immediately
+    const ext = path.extname(req.path).toLowerCase();
+    if (['.png', '.jpg', '.jpeg'].includes(ext)) {
+      const webpRel = req.path.replace(/\.(png|jpg|jpeg)$/i, '.webp');
+      const absoluteWebp = path.join(uploadsPath, webpRel.replace(/^\//, ''));
+      if (fs.existsSync(absoluteWebp)) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        res.setHeader('Content-Type', 'image/webp');
+        return res.sendFile(absoluteWebp);
+      }
+    }
+    next();
+  },
+  express.static(uploadsPath, {
+    maxAge: '365d',
+    immutable: true,
+    etag: true,
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    },
+  })
+);
 
 // Healthcheck
 app.get('/api/health', (req, res) => {
