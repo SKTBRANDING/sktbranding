@@ -40,10 +40,18 @@ export default function AdminOverview({
   onSelectInquiry,
   onOpenTaskModal,
 }: AdminOverviewProps) {
-  const publishedProjectsCount = data.projects.filter((p) => p.published).length;
-  const publishedServicesCount = data.services.filter((s) => s.published).length;
-  const newInquiries = data.inquiries.filter((i) => i.status === 'New');
-  const recentInquiries = [...data.inquiries].slice(0, 5);
+  const projects = Array.isArray(data?.projects) ? data.projects : [];
+  const services = Array.isArray(data?.services) ? data.services : [];
+  const inquiries = Array.isArray(data?.inquiries) ? data.inquiries : [];
+  const testimonials = Array.isArray(data?.testimonials) ? data.testimonials : [];
+  const tasks = Array.isArray(data?.tasks) ? data.tasks : [];
+  const designers = Array.isArray(data?.designers) ? data.designers : [];
+  const invoices = Array.isArray(data?.invoices) ? data.invoices : [];
+
+  const publishedProjectsCount = projects.filter((p) => p && p.published).length;
+  const publishedServicesCount = services.filter((s) => s && s.published).length;
+  const newInquiries = inquiries.filter((i) => i && i.status === 'New');
+  const recentInquiries = [...inquiries].slice(0, 5);
 
   return (
     <div className="space-y-8">
@@ -118,14 +126,14 @@ export default function AdminOverview({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-white tracking-tight">
-              ${(data.invoices || []).reduce((acc, inv) => acc + Number(inv.total || 0), 0).toLocaleString()}
+              ${invoices.reduce((acc, inv) => acc + Number(inv?.total || 0), 0).toLocaleString()}
             </span>
             <span className="text-xs text-amber-400">
-              ${(data.invoices || []).reduce((acc, inv) => acc + Number(inv.balanceDue || 0), 0).toLocaleString()} due
+              ${invoices.reduce((acc, inv) => acc + Number(inv?.balanceDue || 0), 0).toLocaleString()} due
             </span>
           </div>
           <span className="inline-block mt-3 text-xs text-[#FF4D00] group-hover:underline">
-            {(data.invoices || []).length} invoices • Manage billing →
+            {invoices.length} invoices • Manage billing →
           </span>
         </div>
 
@@ -134,7 +142,7 @@ export default function AdminOverview({
           onClick={() => onNavigateTab('tasks')}
           className="luxury-card rounded-2xl p-6 border border-white/10 hover:border-[#FF4D00]/50 transition-all cursor-pointer group relative overflow-hidden"
         >
-          {((data.tasks || []).filter((t) => t.status === 'submitted' || t.status === 'resubmitted').length > 0) && (
+          {(tasks.filter((t) => t && (t.status === 'submitted' || t.status === 'resubmitted')).length > 0) && (
             <div className="absolute top-0 right-0 w-16 h-16 bg-[#FF4D00]/20 rounded-bl-full pointer-events-none" />
           )}
           <div className="flex items-center justify-between mb-4">
@@ -147,10 +155,10 @@ export default function AdminOverview({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-white tracking-tight">
-              {(data.tasks || []).length}
+              {tasks.length}
             </span>
             <span className="text-xs text-[#FF4D00]">
-              {(data.tasks || []).filter((t) => t.status === 'submitted' || t.status === 'resubmitted').length} awaiting review
+              {tasks.filter((t) => t && (t.status === 'submitted' || t.status === 'resubmitted')).length} awaiting review
             </span>
           </div>
           <span className="inline-block mt-3 text-xs text-[#FF4D00] group-hover:underline">
@@ -173,10 +181,10 @@ export default function AdminOverview({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-white tracking-tight">
-              {(data.designers || []).filter((d) => d.status === 'active').length}
+              {designers.filter((d) => d && d.status === 'active').length}
             </span>
             <span className="text-xs text-[#737373]">
-              of {(data.designers || []).length} registered
+              of {designers.length} registered
             </span>
           </div>
           <span className="inline-block mt-3 text-xs text-[#FF4D00] group-hover:underline">
@@ -202,7 +210,7 @@ export default function AdminOverview({
               {publishedProjectsCount}
             </span>
             <span className="text-xs text-[#737373]">
-              of {data.projects.length} total
+              of {projects.length} total
             </span>
           </div>
           <span className="inline-block mt-3 text-xs text-[#FF4D00] group-hover:underline">
@@ -280,7 +288,7 @@ export default function AdminOverview({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold text-white tracking-tight">
-              {data.inquiries.length}
+              {inquiries.length}
             </span>
             <span className="text-xs text-[#737373]">
               all time submissions
@@ -420,7 +428,7 @@ export default function AdminOverview({
                 onClick={() => onNavigateTab('inquiries')}
                 className="text-xs text-[#FF4D00] hover:underline"
               >
-                View All ({data.inquiries.length})
+                View All ({inquiries.length})
               </button>
             </div>
 

@@ -30,8 +30,8 @@ interface AdminSettingsProps {
 
 export default function AdminSettings({ settings, onRefresh, showToast }: AdminSettingsProps) {
   const [formData, setFormData] = useState<AgencySettings>({
-    ...settings,
-    socialLinks: { ...(settings.socialLinks || {}) },
+    ...(settings || {}),
+    socialLinks: { ...((settings && settings.socialLinks) || {}) },
   });
 
   const [saving, setSaving] = useState(false);

@@ -9,12 +9,12 @@ function ModalMediaImage({ src, alt, className = '' }: { src: string; alt: strin
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className={`relative w-full flex items-center justify-center bg-white overflow-hidden ${className}`}>
+    <div className={`relative w-full flex items-center justify-center bg-black overflow-hidden ${className}`}>
       {!isLoaded && !hasError && (
-        <div className="absolute inset-0 bg-neutral-100 animate-pulse" />
+        <div className="absolute inset-0 bg-neutral-900 animate-pulse" />
       )}
       {hasError ? (
-        <div className="w-full h-48 flex flex-col items-center justify-center bg-white p-4 text-center">
+        <div className="w-full h-48 flex flex-col items-center justify-center bg-black p-4 text-center">
           <Sparkles className="w-5 h-5 text-[#FF4D00]/50 mb-1" />
           <span className="text-xs text-[#737373]">{alt}</span>
         </div>
@@ -26,7 +26,7 @@ function ModalMediaImage({ src, alt, className = '' }: { src: string; alt: strin
           decoding="async"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
-          className={`w-full h-auto max-h-[90vh] object-contain object-center transition-opacity duration-300 ${
+          className={`w-full max-w-[1080px] h-auto max-h-[1920px] object-contain object-center transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
         />
@@ -157,13 +157,13 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             </div>
           </div>
 
-          {/* Hero Cover Image (White Background with Black Outer Spacing) */}
-          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-white shadow-2xl p-2 sm:p-4 border border-white/20">
-            <div className="w-full flex items-center justify-center bg-white rounded-xl sm:rounded-2xl overflow-hidden">
+          {/* Hero Cover Image (Black Background, 1080px Width x 1920px Height Portrait / Poster Dimensions) */}
+          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-black shadow-2xl p-0 border border-white/10 w-full max-w-[1080px] mx-auto flex items-center justify-center">
+            <div className="w-full flex items-center justify-center bg-black overflow-hidden">
               <img
                 src={project.coverImage}
                 alt={project.imageAlt || project.title}
-                className="w-full h-auto max-h-[90vh] object-contain object-center rounded-xl"
+                className="w-full max-w-[1080px] h-auto max-h-[1920px] object-contain object-center rounded-2xl mx-auto block"
               />
             </div>
           </div>
@@ -239,7 +239,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             </div>
           )}
 
-          {/* Multiple Gallery Images & Media Assets (White Background with Black Space Between Cards) */}
+          {/* Multiple Gallery Images & Media Assets (Black Background with 1080px Width x 1920px Height Portrait / Poster Dimensions) */}
           {project.galleryImages && project.galleryImages.length > 0 && (
             <div className="space-y-6 sm:space-y-8 pt-2">
               <div className="grid grid-cols-1 gap-6 sm:gap-8">
@@ -248,7 +248,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                   return (
                     <div
                       key={i}
-                      className="rounded-2xl sm:rounded-3xl overflow-hidden bg-white shadow-2xl p-2 sm:p-4 border border-white/20 transition-transform duration-300 hover:scale-[1.005]"
+                      className="rounded-2xl sm:rounded-3xl overflow-hidden bg-black shadow-2xl p-0 border border-white/10 transition-transform duration-300 hover:scale-[1.005] w-full max-w-[1080px] mx-auto flex items-center justify-center"
                     >
                       {isVid ? (
                         <video
@@ -256,16 +256,16 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
                           controls
                           playsInline
                           preload="metadata"
-                          className="w-full h-auto max-h-[85vh] object-contain rounded-xl sm:rounded-2xl bg-black"
+                          className="w-full max-w-[1080px] h-auto max-h-[1920px] object-contain rounded-2xl bg-black"
                         />
                       ) : (
-                        <div className="w-full flex items-center justify-center bg-white rounded-xl sm:rounded-2xl overflow-hidden">
+                        <div className="w-full flex items-center justify-center bg-black overflow-hidden">
                           <img
                             src={mediaUrl}
                             alt={`${project.title} - Showcase Exhibit ${i + 1}`}
                             loading="lazy"
                             decoding="async"
-                            className="w-full h-auto max-h-[92vh] object-contain object-center rounded-xl"
+                            className="w-full max-w-[1080px] h-auto max-h-[1920px] object-contain object-center rounded-2xl mx-auto block"
                           />
                         </div>
                       )}

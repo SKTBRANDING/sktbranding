@@ -43,7 +43,42 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ initialData, onLogout }: AdminDashboardProps) {
-  const [data, setData] = useState<DatabaseSchema>(initialData);
+  const [data, setData] = useState<DatabaseSchema>(() => ({
+    ...initialData,
+    projects: Array.isArray(initialData?.projects) ? initialData.projects : [],
+    services: Array.isArray(initialData?.services) ? initialData.services : [],
+    content: initialData?.content || {},
+    settings: initialData?.settings || {},
+    testimonials: Array.isArray(initialData?.testimonials) ? initialData.testimonials : [],
+    inquiries: Array.isArray(initialData?.inquiries) ? initialData.inquiries : [],
+    tasks: Array.isArray(initialData?.tasks) ? initialData.tasks : [],
+    designers: Array.isArray(initialData?.designers) ? initialData.designers : [],
+    invoices: Array.isArray(initialData?.invoices) ? initialData.invoices : [],
+  }));
+
+  React.useEffect(() => {
+    if (initialData) {
+      setData((prev) => ({
+        ...prev,
+        ...initialData,
+        projects: Array.isArray(initialData.projects) ? initialData.projects : prev.projects,
+        services: Array.isArray(initialData.services) ? initialData.services : prev.services,
+        content: initialData.content || prev.content,
+        settings: initialData.settings || prev.settings,
+        testimonials: Array.isArray(initialData.testimonials) ? initialData.testimonials : prev.testimonials,
+        inquiries: Array.isArray(initialData.inquiries) ? initialData.inquiries : prev.inquiries,
+        tasks: Array.isArray(initialData.tasks) ? initialData.tasks : prev.tasks,
+        designers: Array.isArray(initialData.designers) ? initialData.designers : prev.designers,
+        invoices: Array.isArray(initialData.invoices) ? initialData.invoices : prev.invoices,
+      }));
+    }
+  }, [initialData]);
+
+  // Refresh data on mount to ensure fresh authenticated state
+  React.useEffect(() => {
+    refreshData();
+  }, []);
+
   const [activeTab, setActiveTab] = useState<string>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
@@ -146,21 +181,21 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
       icon: Users,
       count: (data.designers || []).length,
     },
-    { id: 'projects', label: 'Projects', icon: FolderKanban, count: data.projects.length },
+    { id: 'projects', label: 'Projects', icon: FolderKanban, count: (data?.projects || []).length },
     {
       id: 'logos',
       label: 'Client Logos Slide',
       icon: Sliders,
-      count: (data.content?.partnerLogos || []).length || 10,
+      count: (data?.content?.partnerLogos || []).length || 10,
     },
-    { id: 'services', label: 'Services', icon: Wrench, count: data.services.length },
+    { id: 'services', label: 'Services', icon: Wrench, count: (data?.services || []).length },
     { id: 'content', label: 'Website Content', icon: Sparkles },
-    { id: 'testimonials', label: 'Testimonials', icon: Quote, count: data.testimonials.length },
+    { id: 'testimonials', label: 'Testimonials', icon: Quote, count: (data?.testimonials || []).length },
     {
       id: 'inquiries',
       label: 'Inquiries',
       icon: Mail,
-      count: data.inquiries.length,
+      count: (data?.inquiries || []).length,
       badge: newInquiriesCount > 0 ? `${newInquiriesCount} New` : undefined,
     },
     { id: 'settings', label: 'Settings & Supabase', icon: Settings },

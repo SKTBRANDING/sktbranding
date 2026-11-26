@@ -705,35 +705,33 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                 </div>
               </div>
 
-              {/* Social Media Dimension Indicator */}
-              {formData.category === 'Social Media' && (
-                <div className="p-3.5 rounded-2xl bg-[#FF4D00]/10 border border-[#FF4D00]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
-                  <div className="flex items-center gap-2.5">
-                    <Sparkles className="w-4 h-4 text-[#FF4D00] flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-white">
-                        Social Media Upload Standard: 1920 × 1080 px
-                      </p>
-                      <p className="text-[11px] text-[#A3A3A3]">
-                        Uploads are automatically formatted to <strong>Width: 1920px</strong> and <strong>Height: 1080px</strong> (16:9 Full HD).
-                      </p>
-                    </div>
+              {/* Upload Dimension Indicator: 1080 x 1920 px (Width 1080px, Height 1920px) */}
+              <div className="p-3.5 rounded-2xl bg-[#FF4D00]/10 border border-[#FF4D00]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+                <div className="flex items-center gap-2.5">
+                  <Sparkles className="w-4 h-4 text-[#FF4D00] flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-bold text-white">
+                      Upload Standard Dimensions: Width 1080px × Height 1920px
+                    </p>
+                    <p className="text-[11px] text-[#A3A3A3]">
+                      Optimized for <strong>Width: 1080px</strong> and <strong>Height: 1920px</strong> (Poster / Portrait showcase format).
+                    </p>
                   </div>
-                  <span className="self-start sm:self-center px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-[#FF4D00] text-black">
-                    1920 × 1080 PX
-                  </span>
                 </div>
-              )}
+                <span className="self-start sm:self-center px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-[#FF4D00] text-black">
+                  1080 × 1920 PX
+                </span>
+              </div>
 
               {/* Cover Image & Alt */}
               <div className="space-y-3 p-4 rounded-2xl bg-[#141414] border border-white/10">
                 <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                  Cover Image & Preview *
+                  Cover Image & Preview (Black Background, 1080×1920) *
                 </label>
                 
                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                   {/* Image Preview Box */}
-                  <div className={`w-full sm:w-44 ${formData.category === 'Social Media' ? 'aspect-[16/9]' : 'aspect-[16/10]'} rounded-xl overflow-hidden bg-white border border-white/20 flex-shrink-0 p-1 flex items-center justify-center`}>
+                  <div className="w-full sm:w-44 aspect-[9/16] rounded-xl overflow-hidden bg-black border border-white/10 flex-shrink-0 p-1 flex items-center justify-center">
                     {formData.coverImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -857,7 +855,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                     {formData.galleryImages.map((mediaUrl, idx) => {
                       const isVid = isDirectVideo(mediaUrl);
                       return (
-                        <div key={idx} className="relative group aspect-[16/10] rounded-lg overflow-hidden bg-white border border-white/20 p-1 flex items-center justify-center">
+                        <div key={idx} className="relative group aspect-[9/16] rounded-lg overflow-hidden bg-black border border-white/10 p-1 flex items-center justify-center">
                           {isVid ? (
                             <div className="relative w-full h-full bg-black">
                               <video src={mediaUrl} className="w-full h-full object-cover" muted playsInline />

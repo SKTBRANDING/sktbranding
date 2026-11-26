@@ -173,23 +173,46 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#050505] flex items-center justify-center p-6 text-center text-white">
-          <div className="space-y-4 max-w-md">
+          <div className="space-y-4 max-w-lg w-full">
             <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-[#FF4D00]/15 text-[#FF4D00] border border-[#FF4D00]/30 inline-block">
               SKT BRANDING RECOVERY
             </span>
             <h1 className="text-2xl font-black">Something went wrong</h1>
             <p className="text-xs text-[#A3A3A3] leading-relaxed">
-              We encountered a temporary rendering issue. Please click below to reload the page.
+              We encountered a temporary rendering issue.
             </p>
-            <button
-              type="button"
-              onClick={() => {
-                if (typeof window !== 'undefined') window.location.reload();
-              }}
-              className="inline-block px-5 py-2.5 rounded-full bg-[#FF4D00] text-black font-extrabold text-xs tracking-wider uppercase hover:bg-[#FF7A00] transition-all cursor-pointer"
-            >
-              Reload Page
-            </button>
+            {this.state.error && (
+              <div className="p-4 bg-red-950/60 border border-red-500/50 rounded-2xl text-left text-xs font-mono text-red-200 overflow-auto max-h-56">
+                <p className="font-bold text-red-300 mb-1">
+                  {this.state.error.message || String(this.state.error)}
+                </p>
+                {this.state.error.stack && (
+                  <pre className="text-[10px] text-red-400/80 whitespace-pre-wrap leading-tight">
+                    {this.state.error.stack}
+                  </pre>
+                )}
+              </div>
+            )}
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  this.setState({ hasError: false, error: null });
+                }}
+                className="inline-block px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border border-white/20"
+              >
+                Try Again
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window !== 'undefined') window.location.reload();
+                }}
+                className="inline-block px-6 py-2.5 rounded-full bg-[#FF4D00] text-black font-extrabold text-xs tracking-wider uppercase hover:bg-[#FF7A00] transition-all cursor-pointer shadow-[0_0_20px_rgba(255,77,0,0.3)]"
+              >
+                Reload Page
+              </button>
+            </div>
           </div>
         </div>
       );

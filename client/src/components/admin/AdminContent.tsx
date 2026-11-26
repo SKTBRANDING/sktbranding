@@ -28,23 +28,23 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
   const [saving, setSaving] = useState(false);
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
-  // Deep clone initial content state
+  // Deep clone initial content state with safe null guards
   const [formData, setFormData] = useState<WebsiteContent>({
     hero: {
-      ...content.hero,
-      stats: [...(content.hero.stats || [])],
+      ...(content?.hero || {}),
+      stats: [...(content?.hero?.stats || [])],
     },
     about: {
-      ...content.about,
-      values: [...(content.about.values || [])],
-      founder: { ...content.about.founder },
+      ...(content?.about || {}),
+      values: [...(content?.about?.values || [])],
+      founder: { ...(content?.about?.founder || {}) },
     },
     process: {
-      ...content.process,
-      steps: [...(content.process.steps || [])],
+      ...(content?.process || {}),
+      steps: [...(content?.process?.steps || [])],
     },
     finalCta: {
-      ...content.finalCta,
+      ...(content?.finalCta || {}),
     },
   });
 

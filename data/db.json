@@ -445,7 +445,70 @@
       "badge": "START A CONVERSATION",
       "headline": "Let’s Build Something Remarkable.",
       "supportingCopy": "Have an upcoming brand launch, redesign, or creative challenge? Connect with us to explore how SKT Branding can elevate your market presence."
-    }
+    },
+    "marqueeTitle": "TRUSTED BY VISIONARY BRANDS & GLOBAL ENTERPRISES",
+    "partnerLogos": [
+      {
+        "id": "logo-1",
+        "name": "BAITUL RASA ",
+        "tagline": "Distillers Co.",
+        "image": "https://res.cloudinary.com/unzkhevi/image/upload/v1795711483/sktbranding/1795711481444_Layer_14.png"
+      },
+      {
+        "id": "logo-2",
+        "name": "Kromos",
+        "tagline": "Soundworks Berlin",
+        "image": "/logos/logo-2.svg"
+      },
+      {
+        "id": "logo-3",
+        "name": "Vanguard",
+        "tagline": "Atelier Zurich",
+        "image": "/logos/logo-3.svg"
+      },
+      {
+        "id": "logo-4",
+        "name": "Baithulrasa",
+        "tagline": "Hospitality & Estate",
+        "image": "/logos/logo-4.svg"
+      },
+      {
+        "id": "logo-5",
+        "name": "Solstice",
+        "tagline": "Labs California",
+        "image": "/logos/logo-5.svg"
+      },
+      {
+        "id": "logo-6",
+        "name": "Orbit",
+        "tagline": "Technologies Singapore",
+        "image": "/logos/logo-6.svg"
+      },
+      {
+        "id": "logo-7",
+        "name": "Lumen",
+        "tagline": "Milano Architecture",
+        "image": "/logos/logo-7.svg"
+      },
+      {
+        "id": "logo-8",
+        "name": "Aura",
+        "tagline": "Paris Heritage",
+        "image": "/logos/logo-8.svg"
+      },
+      {
+        "id": "logo-9",
+        "name": "Nexus",
+        "tagline": "Venture Capital",
+        "image": "/logos/logo-9.svg"
+      },
+      {
+        "id": "logo-10",
+        "name": "Veloce",
+        "tagline": "Corse Modena",
+        "image": "/logos/logo-10.svg"
+      }
+    ]
   },
   "testimonials": [],
   "inquiries": [],
@@ -473,217 +536,45 @@
     {
       "id": "des-d8c6af6a",
       "name": "FATHIMA",
-      "email": "sktdesigns50@gmail.com",
-      "specialty": "Brand Identity & Typography",
+      "email": "fathiartz368@gmail.com",
+      "specialty": "Graphic designer",
       "avatar": "",
-      "token": "FATHIMA 123",
+      "token": "fathima123",
       "status": "active",
       "notes": "",
       "createdAt": "2026-11-26T14:07:47.440Z",
-      "lastActiveAt": "2026-11-26T14:07:47.440Z"
+      "lastActiveAt": "2026-11-26T14:07:47.440Z",
+      "instagram": "shaafography",
+      "phone": "963339958",
+      "accountDetails": "",
+      "dateOfBirth": "1999-07-16",
+      "joiningDate": "2026-11-20",
+      "experienceYears": "Fresher",
+      "companyCode": "skt01",
+      "address": ""
     },
     {
       "id": "des-1",
-      "name": "FIDHA WAFIYYA",
-      "email": "fida@gmail.com",
-      "specialty": "graphic designer",
+      "name": "KADEEJA FIDA",
+      "email": "kadeejafidha05@gmail.com",
+      "specialty": "MULTIMEDIA DESIGNER",
       "avatar": "",
-      "token": "FIDA 123",
+      "token": "fida123",
       "status": "active",
       "createdAt": "2025-01-10T09:00:00.000Z",
       "lastActiveAt": "2026-11-17T03:34:24.432Z",
-      "notes": "Specializes in Swiss minimalism, typography systems, and modern luxury brand guidelines."
+      "notes": "Specializes in Swiss minimalism, typography systems, and modern luxury brand guidelines.",
+      "instagram": "_aestheticweirdo",
+      "phone": "8113838809",
+      "accountDetails": "",
+      "dateOfBirth": "2004-05-04",
+      "joiningDate": "2026-10-23",
+      "experienceYears": "2  YEAR",
+      "companyCode": "skt02",
+      "address": "Padu Mahal  Mogar Mogral Puthur P.0 Mogral Puthur, Kasaragod  671124"
     }
   ],
-  "tasks": [
-    {
-      "id": "task-17887b24",
-      "title": "POSTER",
-      "client": "CSC",
-      "brief": "CSC",
-      "textContent": "",
-      "voiceBrief": null,
-      "deliverables": "",
-      "dimensions": "",
-      "fileFormats": "AI, PSD, PDF, High-Res PNG",
-      "priority": "medium",
-      "status": "assigned",
-      "assignedDesignerId": "des-1",
-      "assignedDesignerName": "FIDHA WAFIYYA",
-      "assignedAt": "2026-11-26T14:16:29.257Z",
-      "deadline": "2026-12-03",
-      "referenceFiles": [],
-      "submissions": [],
-      "createdAt": "2026-11-26T14:16:29.257Z"
-    },
-    {
-      "id": "task-02c4756c",
-      "title": "POSTER DESIGN",
-      "client": "BAITUL RASA",
-      "brief": "APLE POSTER",
-      "textContent": "",
-      "deliverables": "Standard deliverables as described in brief",
-      "dimensions": "",
-      "fileFormats": "AI, PSD, PDF, High-Res PNG",
-      "priority": "urgent",
-      "deadline": "2026-11-17",
-      "status": "in_progress",
-      "assignedDesignerId": "des-1",
-      "assignedDesignerName": "FIDHA WAFIYYA",
-      "assignedAt": "2026-11-17T03:33:35.649Z",
-      "referenceFiles": [
-        {
-          "id": "4f25d888-1715-4640-b3b5-fd60988fdc0f",
-          "name": "divali.jpg",
-          "url": "/uploads/tasks/dd7a1480-9_divali.jpg",
-          "size": 3248523,
-          "type": "image/jpeg",
-          "uploadedAt": "2026-11-17T03:40:04.334Z"
-        }
-      ],
-      "submissions": [],
-      "createdAt": "2026-11-17T03:33:35.649Z",
-      "updatedAt": "2026-11-17T03:40:06.629Z"
-    },
-    {
-      "id": "task-103",
-      "title": "Vesper Botanical Luxury Skincare Packaging",
-      "client": "Vesper Organics Paris",
-      "brief": "Design sustainable folding carton packaging with blind debossing and copper foil accents for Vesper's night restorative serum. We want tactile luxury using FSC certified uncoated black paperboard.",
-      "deliverables": "Complete packaging dieline design, embossing die production guides, and photorealistic 3D presentation renders.",
-      "dimensions": "Outer carton: 45mm x 45mm x 135mm",
-      "fileFormats": "AI master dielines with separate spot layers, Print PDF, 4x 3D JPG renders (1920x1080)",
-      "priority": "urgent",
-      "deadline": "2025-03-05T18:00:00.000Z",
-      "status": "revision_requested",
-      "assignedDesignerId": "des-2",
-      "assignedDesignerName": "Lucas Silva",
-      "assignedAt": "2025-02-22T08:00:00.000Z",
-      "referenceFiles": [
-        {
-          "id": "ref-model-1",
-          "name": "Vesper_Carton_3D_Architecture.glb",
-          "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-          "size": 14200000,
-          "type": "model/gltf-binary",
-          "uploadedAt": "2025-02-22T08:10:00.000Z",
-          "category": "model"
-        },
-        {
-          "id": "ref-pdf-1",
-          "name": "Vesper_Carton_Dieline_Guidelines.pdf",
-          "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-          "size": 4500000,
-          "type": "application/pdf",
-          "uploadedAt": "2025-02-22T08:12:00.000Z",
-          "category": "pdf"
-        },
-        {
-          "id": "ref-png-1",
-          "name": "Vesper_Foil_Embossing_Texture.png",
-          "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-          "size": 2800000,
-          "type": "image/png",
-          "uploadedAt": "2025-02-22T08:14:00.000Z",
-          "category": "image"
-        }
-      ],
-      "submissions": [
-        {
-          "id": "sub-1",
-          "version": 1,
-          "versionLabel": "Original Submission",
-          "submittedAt": "2025-02-25T17:30:00.000Z",
-          "designerId": "des-2",
-          "designerName": "Lucas Silva",
-          "notes": "Initial carton architecture with copper hot-stamping on 380gsm black linen board. Included two variations for the top tuck flap seal.",
-          "files": [
-            {
-              "id": "f-1",
-              "name": "Vesper_Carton_v1_Dieline.pdf",
-              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1400&q=80",
-              "size": 8900000,
-              "type": "application/pdf",
-              "uploadedAt": "2025-02-25T17:28:00.000Z"
-            },
-            {
-              "id": "f-2",
-              "name": "Vesper_Serum_3D_Mockups.zip",
-              "url": "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=1400&q=80",
-              "size": 24500000,
-              "type": "application/zip",
-              "uploadedAt": "2025-02-25T17:29:00.000Z"
-            }
-          ],
-          "reviewStatus": "revision_requested",
-          "reviewedAt": "2025-02-26T11:15:00.000Z",
-          "adminFeedback": "The overall material choice and copper foil treatment look exquisite. However, please make two critical adjustments:\n1. Increase the tracking on the French ingredient text on the left panel (currently too dense for foil debossing).\n2. Reposition the batch verification QR square to the bottom flap so the exterior panels remain completely minimal.",
-          "designerVoiceNote": {
-            "id": "des-voice-1",
-            "name": "Lucas_Submission_Walkthrough.webm",
-            "url": "https://actions.google.com/sounds/v1/ambiences/humming_room.ogg",
-            "size": 185000,
-            "type": "audio/ogg",
-            "uploadedAt": "2025-02-25T17:31:00.000Z",
-            "category": "audio",
-            "duration": 25
-          },
-          "adminVoiceFeedback": {
-            "id": "admin-voice-rev-1",
-            "name": "Admin_Voice_Revision_Instructions.webm",
-            "url": "https://actions.google.com/sounds/v1/ambiences/humming_room.ogg",
-            "size": 320000,
-            "type": "audio/ogg",
-            "uploadedAt": "2025-02-26T11:16:00.000Z",
-            "category": "audio",
-            "duration": 44
-          },
-          "adminFeedbackAttachments": [
-            {
-              "id": "rev-ref-model",
-              "name": "Vesper_Revision_Reference_Carton.obj",
-              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-              "size": 9800000,
-              "type": "model/obj",
-              "uploadedAt": "2025-02-26T11:17:00.000Z",
-              "category": "model"
-            },
-            {
-              "id": "rev-ref-pdf",
-              "name": "Revision_Deboss_Specifications.pdf",
-              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-              "size": 3200000,
-              "type": "application/pdf",
-              "uploadedAt": "2025-02-26T11:17:00.000Z",
-              "category": "pdf"
-            },
-            {
-              "id": "rev-ref-png",
-              "name": "Foil_Tracking_Adjustment_Markup.png",
-              "url": "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=1200&q=80",
-              "size": 1950000,
-              "type": "image/png",
-              "uploadedAt": "2025-02-26T11:18:00.000Z",
-              "category": "image"
-            }
-          ]
-        }
-      ],
-      "createdAt": "2025-02-22T08:00:00.000Z",
-      "updatedAt": "2025-02-26T11:15:00.000Z",
-      "textContent": "VESPER RESTORATIVE NIGHT SERUM\n100% ORGANIC BOTANICAL EXTRACTS\n50ml e 1.7 FL. OZ.\n\nFormulated with wild Nordic cloudberry seed oil and cold-pressed botanical squalane. Deep cellular recovery overnight.\n\nDirections: Warm 3-4 drops between fingertips and press gently into clean face and neck before sleep.\nBatch: VSP-2026-N09 • Made in France",
-      "voiceBrief": {
-        "id": "voice-brief-103",
-        "name": "Creative_Director_Audio_Brief.webm",
-        "url": "https://actions.google.com/sounds/v1/ambiences/humming_room.ogg",
-        "size": 245000,
-        "type": "audio/ogg",
-        "uploadedAt": "2025-02-22T08:05:00.000Z",
-        "category": "audio",
-        "duration": 38
-      }
-    }
-  ],
+  "tasks": [],
   "invoices": [
     {
       "id": "inv-1795703202493-dc927f72",
