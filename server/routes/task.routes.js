@@ -290,10 +290,16 @@ router.put('/:id', requireAdmin, async (req, res) => {
           if (body.rate !== undefined) task.rate = Math.max(0, Number(body.rate));
           if (body.priority !== undefined) task.priority = body.priority;
           if (body.deadline !== undefined) task.deadline = body.deadline;
+          const wasCompleted = task.status === 'completed';
           if (body.assignedAt !== undefined) task.assignedAt = body.assignedAt;
           if (body.status !== undefined) task.status = body.status;
           if (body.referenceFiles !== undefined) task.referenceFiles = body.referenceFiles;
           await task.save();
+
+          if (task.status === 'completed' && !wasCompleted) {
+            await recordApprovedTaskToClientInvoice(task);
+          }
+
           return res.json(task);
         }
       } catch (e) {
@@ -302,17 +308,25 @@ router.put('/:id', requireAdmin, async (req, res) => {
     }
 
     let updated = null;
+    let shouldRecordBilling = false;
     saveJsonDb((db) => {
       if (!Array.isArray(db.tasks)) db.tasks = [];
       const idx = db.tasks.findIndex((t) => t.id === req.params.id);
       if (idx !== -1) {
+        const prevStatus = db.tasks[idx].status;
         db.tasks[idx] = { ...db.tasks[idx], ...body };
         updated = db.tasks[idx];
+        if (updated.status === 'completed' && prevStatus !== 'completed') {
+          shouldRecordBilling = true;
+        }
       }
       return db;
     });
 
     if (!updated) return res.status(404).json({ error: 'Task not found' });
+    if (shouldRecordBilling) {
+      await recordApprovedTaskToClientInvoice(updated);
+    }
     return res.json(updated);
   } catch (err) {
     return res.status(500).json({ error: 'Failed to update task: ' + err.message });
@@ -430,127 +444,193 @@ router.post('/:id/start', requireDesigner, async (req, res) => {
 });
 
 // ==========================================
-// Helper: Automatically Accumulate Deliverables on Client Billing Invoice
+// Helper: Automatically Accumulate Deliverables on One Monthly Client Billing Invoice Upon Admin Approval
 // ==========================================
-async function recordSubmissionToClientInvoice(task) {
+function cleanStringKey(str) {
+  return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function getStandardServiceName(category, title) {
+  const combined = `${category || ''} ${title || ''}`.toLowerCase();
+  if (/poster/i.test(combined)) return 'POSTER DESIGN';
+  if (/video|motion|reel|animation/i.test(combined)) return 'VIDEO / MOTION GRAPHICS';
+  if (/logo|monogram|icon/i.test(combined)) return 'LOGO DESIGN & MONOGRAM';
+  if (/brand|identity|guideline/i.test(combined)) return 'BRAND IDENTITY & GUIDELINES';
+  if (/packag|label|box/i.test(combined)) return 'PACKAGING & LABEL DESIGN';
+  if (/brochure|catalog|lookbook|print/i.test(combined)) return 'BROCHURE & PRINT DESIGN';
+  if (/social|creative|banner|flyer/i.test(combined)) return 'SOCIAL MEDIA POST & CREATIVES';
+  return (category || title || 'Creative Deliverable').toUpperCase().trim();
+}
+
+async function recordApprovedTaskToClientInvoice(task) {
   try {
     if (!task) return;
-    const clientName = (task.client || '').trim();
-    if (!clientName) return;
+    const rawClientName = (task.client || '').trim();
+    if (!rawClientName) return;
 
+    // Prevent double-billing if task is already billed
+    if (task.billedAt && task.billedToInvoiceId) {
+      console.log(`[Billing] Task ${task.id} was already billed to invoice ${task.billedInvoiceNumber || task.billedToInvoiceId}. Skipping.`);
+      return;
+    }
+
+    const rawKey = cleanStringKey(rawClientName);
     const category = (task.serviceCategory || task.serviceName || 'Design Deliverables').trim();
-    const itemDescription = (task.title || 'Creative Deliverable').trim();
-    const todayStr = new Date().toISOString().split('T')[0];
-    const dueDateStr = task.deadline
-      ? String(task.deadline).slice(0, 10)
-      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const standardServiceName = getStandardServiceName(category, task.title);
 
-    // Look up client profile for custom rates and contact information
+    // 1. Resolve registered client profile from Mongo or JSON DB for consistent naming & custom rates
     let clientRecord = null;
     if (isMongoConnected()) {
       try {
-        clientRecord = await Client.findOne({
-          name: new RegExp(`^${clientName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+        const allClients = await Client.find();
+        clientRecord = allClients.find((c) => {
+          const cKey = cleanStringKey(c.name);
+          const compKey = cleanStringKey(c.company);
+          return cKey === rawKey || compKey === rawKey ||
+                 (rawKey.length >= 4 && (cKey.includes(rawKey) || rawKey.includes(cKey)));
         });
       } catch (err) {}
     }
+
     const jsonDb = getJsonDb();
-    const dbClient = (jsonDb.clients || []).find(
-      (c) => (c.name || '').trim().toLowerCase() === clientName.toLowerCase()
-    );
+    const dbClient = (jsonDb.clients || []).find((c) => {
+      const cKey = cleanStringKey(c.name);
+      const compKey = cleanStringKey(c.company);
+      return cKey === rawKey || compKey === rawKey ||
+             (rawKey.length >= 4 && (cKey.includes(rawKey) || rawKey.includes(cKey)));
+    });
+
+    const canonicalClientName = (clientRecord && clientRecord.name) || (dbClient && dbClient.name) || rawClientName.toUpperCase();
+    const canonicalClientId = (clientRecord && clientRecord.id) || (dbClient && dbClient.id) || '';
+    const canonicalCompany = (clientRecord && clientRecord.company) || (dbClient && dbClient.company) || task.clientCompany || canonicalClientName;
+    const canonicalPhone = (clientRecord && clientRecord.phone) || (dbClient && dbClient.phone) || task.clientPhone || '+91 9544931226';
+    const canonicalEmail = (clientRecord && clientRecord.email) || (dbClient && dbClient.email) || task.clientEmail || `billing@${cleanStringKey(canonicalClientName)}.com`;
+    const canonicalAddress = (clientRecord && clientRecord.address) || (dbClient && dbClient.address) || task.clientAddress || '';
 
     // Determine accurate service rate (e.g. Poster ₹300, Video ₹500)
     let rate = Number(task.rate) || 0;
     if (!rate) {
       const clientRates = (clientRecord && clientRecord.serviceRates) || (dbClient && dbClient.serviceRates) || [];
       const matched = clientRates.find(
-        (r) => (r.serviceName || '').trim().toLowerCase() === category.toLowerCase()
+        (r) => getStandardServiceName(r.serviceName, r.category) === standardServiceName
       );
       if (matched && Number(matched.rate)) {
         rate = Number(matched.rate);
       }
     }
     if (!rate) {
-      if (/video/i.test(category) || /reels/i.test(category)) rate = 500;
-      else if (/poster/i.test(category)) rate = 300;
+      if (/video|motion/i.test(standardServiceName)) rate = 500;
+      else if (/logo/i.test(standardServiceName)) rate = 1500;
+      else if (/brand/i.test(standardServiceName)) rate = 3500;
       else rate = 300;
     }
 
-    const clientCompany = task.clientCompany || (clientRecord && clientRecord.company) || (dbClient && dbClient.company) || clientName;
-    const clientPhone = task.clientPhone || (clientRecord && clientRecord.phone) || (dbClient && dbClient.phone) || '';
-    const clientEmail = task.clientEmail || (clientRecord && clientRecord.email) || (dbClient && dbClient.email) || `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`;
-    const clientAddress = task.clientAddress || (clientRecord && clientRecord.address) || (dbClient && dbClient.address) || '';
+    // Monthly billing cycle identification (Year-Month: e.g. "2026-11")
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const monthName = now.toLocaleString('en-US', { month: 'long' });
+    const todayStr = now.toISOString().split('T')[0];
+    const dueDateStr = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const monthlyProjectTitle = `${canonicalClientName} - ${monthName} ${year} Creative Deliverables`;
+
+    let assignedInvoiceId = null;
+    let assignedInvoiceNumber = null;
+
+    // Helper to check if an invoice belongs to the same client
+    const isMatchingClientInvoice = (inv) => {
+      if (!inv) return false;
+      if (['paid', 'cancelled'].includes(inv.status)) return false;
+      if (canonicalClientId && inv.clientId === canonicalClientId) return true;
+      const invKey = cleanStringKey(inv.clientName);
+      const targetKey = cleanStringKey(canonicalClientName);
+      if (invKey === targetKey) return true;
+      if (invKey.length >= 4 && (invKey.includes(targetKey) || targetKey.includes(invKey))) return true;
+      return false;
+    };
+
+    // Helper to add or increment item count on an invoice
+    const applyServiceItemToInvoice = (invoice) => {
+      if (!Array.isArray(invoice.items)) invoice.items = [];
+      const existingItem = invoice.items.find(
+        (it) => getStandardServiceName(it.category, it.description) === standardServiceName
+      );
+
+      if (existingItem) {
+        existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
+        existingItem.rate = rate || existingItem.rate || 300;
+        existingItem.amount = Number((existingItem.quantity * existingItem.rate).toFixed(2));
+        existingItem.description = standardServiceName;
+        existingItem.category = category;
+      } else {
+        invoice.items.push({
+          id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
+          description: standardServiceName,
+          category: category,
+          quantity: 1,
+          rate: rate,
+          amount: rate,
+        });
+      }
+
+      const subtotal = Number(invoice.items.reduce((acc, it) => acc + (Number(it.amount) || 0), 0).toFixed(2));
+      const discountAmount = Number(((subtotal * (invoice.discountRate || 0)) / 100).toFixed(2));
+      const taxable = Math.max(0, subtotal - discountAmount);
+      const taxAmount = Number(((taxable * (invoice.taxRate || 0)) / 100).toFixed(2));
+      const total = Number((taxable + taxAmount).toFixed(2));
+      const balanceDue = Number(Math.max(0, total - (invoice.amountPaid || 0)).toFixed(2));
+
+      invoice.subtotal = subtotal;
+      invoice.taxAmount = taxAmount;
+      invoice.discountAmount = discountAmount;
+      invoice.total = total;
+      invoice.balanceDue = balanceDue;
+      invoice.projectName = monthlyProjectTitle;
+      if (!invoice.currency) invoice.currency = 'INR';
+      invoice.clientName = canonicalClientName;
+      if (canonicalClientId && !invoice.clientId) invoice.clientId = canonicalClientId;
+      if (canonicalCompany) invoice.clientCompany = canonicalCompany;
+      if (canonicalPhone) invoice.clientPhone = canonicalPhone;
+      if (canonicalEmail) invoice.clientEmail = canonicalEmail;
+      if (canonicalAddress) invoice.clientAddress = canonicalAddress;
+      invoice.notes = `Monthly consolidated billing invoice for ${monthName} ${year}. Includes all approved creative deliverables.`;
+    };
 
     // 1. Sync to Mongo if connected
     if (isMongoConnected()) {
       try {
-        const clientRegex = new RegExp(`^${clientName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
-        let invoice = await Invoice.findOne({
-          clientName: clientRegex,
+        const openInvoices = await Invoice.find({
           status: { $in: ['pending', 'draft', 'partially_paid'] },
         }).sort({ createdAt: -1 });
 
+        let invoice = openInvoices.find(isMatchingClientInvoice);
+
         if (invoice) {
-          if (!Array.isArray(invoice.items)) invoice.items = [];
-          const existingItem = invoice.items.find(
-            (it) => (it.description || '').trim().toLowerCase() === itemDescription.toLowerCase()
-          );
-
-          if (existingItem) {
-            existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
-            existingItem.rate = rate;
-            existingItem.amount = Number((existingItem.quantity * existingItem.rate).toFixed(2));
-          } else {
-            invoice.items.push({
-              id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
-              description: itemDescription,
-              category: category,
-              quantity: 1,
-              rate: rate,
-              amount: rate,
-            });
-          }
-
-          const subtotal = Number(invoice.items.reduce((acc, it) => acc + (Number(it.amount) || 0), 0).toFixed(2));
-          const discountAmount = Number(((subtotal * (invoice.discountRate || 0)) / 100).toFixed(2));
-          const taxable = Math.max(0, subtotal - discountAmount);
-          const taxAmount = Number(((taxable * (invoice.taxRate || 0)) / 100).toFixed(2));
-          const total = Number((taxable + taxAmount).toFixed(2));
-          const balanceDue = Number(Math.max(0, total - (invoice.amountPaid || 0)).toFixed(2));
-
-          invoice.subtotal = subtotal;
-          invoice.taxAmount = taxAmount;
-          invoice.discountAmount = discountAmount;
-          invoice.total = total;
-          invoice.balanceDue = balanceDue;
-          if (!invoice.currency) invoice.currency = 'INR';
-          if (!invoice.clientCompany && clientCompany) invoice.clientCompany = clientCompany;
-          if (!invoice.clientPhone && clientPhone) invoice.clientPhone = clientPhone;
-          if (!invoice.clientEmail && clientEmail) invoice.clientEmail = clientEmail;
-          if (!invoice.clientAddress && clientAddress) invoice.clientAddress = clientAddress;
-
+          applyServiceItemToInvoice(invoice);
           await invoice.save();
+          assignedInvoiceId = invoice.id;
+          assignedInvoiceNumber = invoice.invoiceNumber;
         } else {
           const count = await Invoice.countDocuments();
-          const year = new Date().getFullYear();
-          const invoiceNumber = `SKT-INV-${year}-${String(count + 1).padStart(3, '0')}`;
+          assignedInvoiceNumber = `SKT-INV-${year}-${String(count + 1).padStart(3, '0')}`;
+          assignedInvoiceId = `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
 
           const newInv = new Invoice({
-            id: `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
-            invoiceNumber,
-            clientId: (clientRecord && clientRecord.id) || (dbClient && dbClient.id) || '',
-            clientName,
-            clientEmail,
-            clientCompany,
-            clientPhone,
-            clientAddress,
-            projectName: `${itemDescription}`,
+            id: assignedInvoiceId,
+            invoiceNumber: assignedInvoiceNumber,
+            clientId: canonicalClientId,
+            clientName: canonicalClientName,
+            clientEmail: canonicalEmail,
+            clientCompany: canonicalCompany,
+            clientPhone: canonicalPhone,
+            clientAddress: canonicalAddress,
+            projectName: monthlyProjectTitle,
             issueDate: todayStr,
             dueDate: dueDateStr,
             items: [
               {
                 id: `item-${Date.now()}`,
-                description: itemDescription,
+                description: standardServiceName,
                 category: category,
                 quantity: 1,
                 rate: rate,
@@ -569,7 +649,7 @@ async function recordSubmissionToClientInvoice(task) {
             currency: 'INR',
             paymentMethod: 'bank_transfer',
             paymentDetails: 'SKT BRANDING AGENCY • Wire / UPI / Bank Transfer',
-            notes: `Auto-generated billing invoice upon deliverables submission for ${itemDescription}.`,
+            notes: `Monthly consolidated billing invoice for ${monthName} ${year}. Includes all approved creative deliverables.`,
           });
           await newInv.save();
         }
@@ -581,72 +661,40 @@ async function recordSubmissionToClientInvoice(task) {
     // 2. Always sync to JSON DB fallback (data/db.json)
     saveJsonDb((db) => {
       if (!Array.isArray(db.invoices)) db.invoices = [];
-      const clientLower = clientName.toLowerCase();
-      const existingInv = db.invoices.find(
-        (inv) =>
-          (inv.clientName || '').trim().toLowerCase() === clientLower &&
-          ['pending', 'draft', 'partially_paid'].includes(inv.status)
-      );
+
+      let existingInv = db.invoices.find(isMatchingClientInvoice);
 
       if (existingInv) {
-        if (!Array.isArray(existingInv.items)) existingInv.items = [];
-        const existingItem = existingInv.items.find(
-          (it) => (it.description || '').trim().toLowerCase() === itemDescription.toLowerCase()
-        );
-
-        if (existingItem) {
-          existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
-          existingItem.rate = rate;
-          existingItem.amount = Number((existingItem.quantity * existingItem.rate).toFixed(2));
-        } else {
-          existingInv.items.push({
-            id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
-            description: itemDescription,
-            category: category,
-            quantity: 1,
-            rate: rate,
-            amount: rate,
-          });
+        applyServiceItemToInvoice(existingInv);
+        existingInv.updatedAt = new Date().toISOString();
+        if (!assignedInvoiceId) assignedInvoiceId = existingInv.id;
+        if (!assignedInvoiceNumber) assignedInvoiceNumber = existingInv.invoiceNumber;
+      } else {
+        const count = db.invoices.length;
+        if (!assignedInvoiceNumber) {
+          assignedInvoiceNumber = `SKT-INV-${year}-${String(count + 1).padStart(3, '0')}`;
+        }
+        if (!assignedInvoiceId) {
+          assignedInvoiceId = `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
         }
 
-        const subtotal = Number(existingInv.items.reduce((acc, it) => acc + (Number(it.amount) || 0), 0).toFixed(2));
-        const discountAmount = Number(((subtotal * (existingInv.discountRate || 0)) / 100).toFixed(2));
-        const taxable = Math.max(0, subtotal - discountAmount);
-        const taxAmount = Number(((taxable * (existingInv.taxRate || 0)) / 100).toFixed(2));
-        const total = Number((taxable + taxAmount).toFixed(2));
-        const balanceDue = Number(Math.max(0, total - (existingInv.amountPaid || 0)).toFixed(2));
-
-        existingInv.subtotal = subtotal;
-        existingInv.taxAmount = taxAmount;
-        existingInv.discountAmount = discountAmount;
-        existingInv.total = total;
-        existingInv.balanceDue = balanceDue;
-        if (!existingInv.currency) existingInv.currency = 'INR';
-        if (!existingInv.clientCompany && clientCompany) existingInv.clientCompany = clientCompany;
-        if (!existingInv.clientPhone && clientPhone) existingInv.clientPhone = clientPhone;
-        if (!existingInv.clientEmail && clientEmail) existingInv.clientEmail = clientEmail;
-        if (!existingInv.clientAddress && clientAddress) existingInv.clientAddress = clientAddress;
-        existingInv.updatedAt = new Date().toISOString();
-      } else {
-        const year = new Date().getFullYear();
-        const invoiceNumber = `SKT-INV-${year}-${String((db.invoices.length || 0) + 1).padStart(3, '0')}`;
         const newInv = {
-          id: `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
-          invoiceNumber,
-          clientId: (clientRecord && clientRecord.id) || (dbClient && dbClient.id) || '',
-          clientName,
-          clientEmail,
-          clientPhone,
-          clientCompany,
-          clientAddress,
+          id: assignedInvoiceId,
+          invoiceNumber: assignedInvoiceNumber,
+          clientId: canonicalClientId,
+          clientName: canonicalClientName,
+          clientEmail: canonicalEmail,
+          clientPhone: canonicalPhone,
+          clientCompany: canonicalCompany,
+          clientAddress: canonicalAddress,
           projectId: '',
-          projectName: itemDescription,
+          projectName: monthlyProjectTitle,
           issueDate: todayStr,
           dueDate: dueDateStr,
           items: [
             {
               id: `item-${Date.now()}`,
-              description: itemDescription,
+              description: standardServiceName,
               category: category,
               quantity: 1,
               rate: rate,
@@ -665,16 +713,44 @@ async function recordSubmissionToClientInvoice(task) {
           currency: 'INR',
           paymentMethod: 'bank_transfer',
           paymentDetails: 'SKT BRANDING AGENCY • Wire / UPI / Bank Transfer',
-          notes: `Auto-generated billing invoice upon deliverables submission for ${itemDescription}.`,
+          notes: `Monthly consolidated billing invoice for ${monthName} ${year}. Includes all approved creative deliverables.`,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
         db.invoices.unshift(newInv);
       }
+
+      // Mark the task as billed to avoid duplicate accumulation
+      if (Array.isArray(db.tasks)) {
+        const taskInDb = db.tasks.find((t) => t.id === task.id);
+        if (taskInDb) {
+          taskInDb.billedAt = new Date().toISOString();
+          taskInDb.billedToInvoiceId = assignedInvoiceId;
+          taskInDb.billedInvoiceNumber = assignedInvoiceNumber;
+        }
+      }
+
       return db;
     });
+
+    if (isMongoConnected()) {
+      try {
+        await Task.updateOne(
+          { id: task.id },
+          {
+            $set: {
+              billedAt: new Date().toISOString(),
+              billedToInvoiceId: assignedInvoiceId,
+              billedInvoiceNumber: assignedInvoiceNumber,
+            },
+          }
+        );
+      } catch (e) {}
+    }
+
+    console.log(`[Billing Success] Task "${task.title}" billed to invoice ${assignedInvoiceNumber} for client ${canonicalClientName} (Service: ${standardServiceName}, Qty incremented).`);
   } catch (err) {
-    console.warn('[Task Route] recordSubmissionToClientInvoice failed:', err.message);
+    console.warn('[Task Route] recordApprovedTaskToClientInvoice failed:', err.message);
   }
 }
 
@@ -725,9 +801,6 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
             task.status = newStatus;
             await task.save();
 
-            // Automatically record/accumulate deliverables in client billing invoice
-            await recordSubmissionToClientInvoice(task);
-
             return res.json({
               success: true,
               message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
@@ -769,9 +842,6 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
     });
 
     if (!updated) return res.status(403).json({ error: 'Forbidden: You are not assigned to this work.' });
-
-    // Automatically record/accumulate deliverables in client billing invoice
-    await recordSubmissionToClientInvoice(updated);
 
     return res.json({
       success: true,
@@ -816,6 +886,11 @@ router.post('/:id/review', requireAdmin, async (req, res) => {
             task.status = 'completed';
           }
           await task.save();
+
+          if (action === 'approve') {
+            await recordApprovedTaskToClientInvoice(task);
+          }
+
           return res.json({
             success: true,
             message: action === 'approve' ? 'Work approved!' : 'Revisions requested.',
@@ -855,6 +930,11 @@ router.post('/:id/review', requireAdmin, async (req, res) => {
     });
 
     if (!updated) return res.status(404).json({ error: 'Task or submissions not found' });
+
+    if (action === 'approve') {
+      await recordApprovedTaskToClientInvoice(updated);
+    }
+
     return res.json({
       success: true,
       message: action === 'approve' ? 'Work approved!' : 'Revisions requested.',
