@@ -82,9 +82,11 @@ export default function AdminTasks({
     textContent: string;
     voiceBrief: TaskAttachment | null;
     deliverables: string;
+    rate: number;
     dimensions: string;
     fileFormats: string;
     priority: TaskPriority;
+    assignedAt: string;
     deadline: string;
     assignedDesignerId: string;
     referenceFiles: TaskAttachment[];
@@ -95,10 +97,12 @@ export default function AdminTasks({
     textContent: '',
     voiceBrief: null,
     deliverables: '',
+    rate: 300,
     dimensions: '',
     fileFormats: 'AI, PSD, PDF, PNG',
     priority: 'medium',
-    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    assignedAt: new Date().toISOString().slice(0, 10),
+    deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
     assignedDesignerId: '',
     referenceFiles: [],
   });
@@ -216,10 +220,12 @@ export default function AdminTasks({
       textContent: '',
       voiceBrief: null,
       deliverables: '',
+      rate: 300,
       dimensions: '',
       fileFormats: 'AI, PSD, PDF, High-Res PNG',
       priority: 'medium',
-      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      assignedAt: new Date().toISOString().slice(0, 10),
+      deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
       assignedDesignerId: preselectId || '',
       referenceFiles: [],
     });
@@ -234,11 +240,13 @@ export default function AdminTasks({
       brief: task.brief,
       textContent: task.textContent || '',
       voiceBrief: task.voiceBrief || null,
-      deliverables: task.deliverables,
+      deliverables: task.deliverables || '',
+      rate: task.rate ?? 300,
       dimensions: task.dimensions || '',
       fileFormats: task.fileFormats || 'AI, PSD, PDF, High-Res PNG',
       priority: task.priority,
-      deadline: task.deadline ? task.deadline.split('T')[0] : '',
+      assignedAt: task.assignedAt ? task.assignedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
+      deadline: task.deadline ? task.deadline.slice(0, 10) : '',
       assignedDesignerId: task.assignedDesignerId || '',
       referenceFiles: task.referenceFiles || [],
     });
@@ -984,21 +992,31 @@ export default function AdminTasks({
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
                     <div className="p-3.5 rounded-xl bg-[#141414] border border-white/5">
                       <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3] font-bold block">
-                        Deliverables Required
+                        Work Assign Date
                       </span>
-                      <p className="text-xs text-white mt-1 font-medium">{selectedTask.deliverables}</p>
+                      <p className="text-xs text-white mt-1 font-mono font-medium">
+                        {selectedTask.assignedAt ? selectedTask.assignedAt.slice(0, 10) : 'Not assigned'}
+                      </p>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-[#141414] border border-white/5">
+                      <span className="text-[10px] uppercase tracking-wider text-[#FF4D00] font-bold block">
+                        Deadline of Works
+                      </span>
+                      <p className="text-xs text-white mt-1 font-mono font-medium">
+                        {formatDate(selectedTask.deadline)}
+                      </p>
                     </div>
 
                     <div className="p-3.5 rounded-xl bg-[#141414] border border-white/5">
                       <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3] font-bold block">
-                        Formats & Dimensions
+                        Rate / Dimensions
                       </span>
-                      <p className="text-xs text-white mt-1 font-medium">
-                        {selectedTask.dimensions ? `${selectedTask.dimensions} • ` : ''}
-                        {selectedTask.fileFormats || 'Standard'}
+                      <p className="text-xs text-white mt-1 font-medium truncate">
+                        ₹{selectedTask.rate ?? 300} {selectedTask.dimensions ? `• ${selectedTask.dimensions}` : ''}
                       </p>
                     </div>
                   </div>
@@ -1160,28 +1178,15 @@ export default function AdminTasks({
                 />
               </div>
 
-              {/* Deliverables Specs */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                    Deliverables
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. 3 Label concepts + 3D Mockups"
-                    value={formData.deliverables}
-                    onChange={(e) => setFormData({ ...formData, deliverables: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                  />
-                </div>
-
+              {/* Dimensions & Formats (Deliverables removed per client specification) */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
                     Dimensions
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. 1920x1080 (16:9), 90x140mm"
+                    placeholder="e.g. 1920x1080 (16:9), 90x140mm, A4"
                     value={formData.dimensions}
                     onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
@@ -1194,7 +1199,7 @@ export default function AdminTasks({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. AI, PSD, PDF, PNG"
+                    placeholder="e.g. AI, PSD, PDF, High-Res PNG"
                     value={formData.fileFormats}
                     onChange={(e) => setFormData({ ...formData, fileFormats: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
@@ -1202,35 +1207,56 @@ export default function AdminTasks({
                 </div>
               </div>
 
-              {/* Priority, Deadline, Assign Designer */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Work Assign Date & Deadline of Works */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-[#090909] border border-[#FF4D00]/25">
                 <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                    Priority
+                  <label className="block text-xs uppercase font-bold text-[#FF4D00] flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Work Assign Date *</span>
                   </label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                  >
-                    <option value="low">Low Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="high">High Priority</option>
-                    <option value="urgent">Urgent Priority</option>
-                  </select>
+                  <input
+                    type="date"
+                    required
+                    value={formData.assignedAt}
+                    onChange={(e) => setFormData({ ...formData, assignedAt: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
+                  />
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                    Deadline *
+                  <label className="block text-xs uppercase font-bold text-[#FF4D00] flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Deadline of Works *</span>
                   </label>
                   <input
                     type="date"
                     required
                     value={formData.deadline}
                     onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
                   />
+                </div>
+              </div>
+
+              {/* Work Rate (for Client Invoice), Assign Designer, Priority */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <span className="text-[#FF4D00] font-bold">₹</span>
+                    <span>Work Rate / Price (INR)</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="50"
+                    placeholder="e.g. 300"
+                    value={formData.rate}
+                    onChange={(e) => setFormData({ ...formData, rate: Number(e.target.value) || 0 })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
+                  />
+                  <p className="text-[10px] text-[#737373]">
+                    Auto-added to client invoice upon deliverable submission.
+                  </p>
                 </div>
 
                 <div className="space-y-1.5">
@@ -1248,6 +1274,22 @@ export default function AdminTasks({
                         {d.name} ({d.specialty})
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
+                    Priority
+                  </label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
+                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  >
+                    <option value="low">Low Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="high">High Priority</option>
+                    <option value="urgent">Urgent Priority</option>
                   </select>
                 </div>
               </div>

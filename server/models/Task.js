@@ -51,6 +51,7 @@ const TaskSchema = new mongoose.Schema(
     textContent: { type: String, default: '' },
     voiceBrief: { type: TaskAttachmentSchema, default: null },
     deliverables: { type: String, default: 'Standard design deliverables' },
+    rate: { type: Number, default: 300 },
     dimensions: { type: String, default: '' },
     fileFormats: { type: String, default: 'AI, PSD, PDF, PNG' },
     priority: {

@@ -178,6 +178,7 @@ export interface Designer {
   joiningDate?: string;
   experienceYears?: string;
   companyCode?: string;
+  address?: string;
 }
 
 export interface TaskAttachment {
@@ -226,7 +227,8 @@ export interface Task {
   brief: string;
   textContent?: string; // Text content / copy to be incorporated into design
   voiceBrief?: TaskAttachment | null; // Audio / voice instructions from admin
-  deliverables: string;
+  deliverables?: string;
+  rate?: number;
   dimensions?: string;
   fileFormats?: string;
   priority: TaskPriority;

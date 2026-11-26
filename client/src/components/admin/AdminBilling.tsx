@@ -13,6 +13,7 @@ import {
   AlertCircle,
   FileText,
   Printer,
+  Download,
   Copy,
   Check,
   Edit2,
@@ -461,6 +462,26 @@ export default function AdminBilling({
     }
   };
 
+  const handleDownloadPdf = (inv: Invoice) => {
+    setSelectedInvoice(inv);
+    setPreviewModalOpen(true);
+    showToast(`Preparing invoice PDF for ${inv.invoiceNumber}...`, 'success');
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.print();
+      }
+    }, 350);
+  };
+
+  const handleDownloadFromModal = () => {
+    showToast('Select "Save as PDF" destination to download invoice to your computer.', 'success');
+    setTimeout(() => {
+      if (typeof window !== 'undefined') {
+        window.print();
+      }
+    }, 200);
+  };
+
   const formatCurrency = (amount: number, curr = 'USD') => {
     const symbol = CURRENCY_SYMBOLS[curr] || '$';
     return `${symbol}${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -751,6 +772,16 @@ export default function AdminBilling({
                           <Printer className="w-4 h-4" />
                         </button>
 
+                        {/* Download Invoice PDF */}
+                        <button
+                          type="button"
+                          onClick={() => handleDownloadPdf(inv)}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#A3A3A3] hover:text-[#FF4D00] transition-colors"
+                          title="Download Invoice as PDF"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+
                         {/* Record Payment */}
                         {inv.balanceDue > 0 && (
                           <button
@@ -869,10 +900,21 @@ export default function AdminBilling({
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FF4D00] text-black text-xs font-bold hover:bg-[#FF7A00] transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)]"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all border border-white/20"
+                  title="Print invoice to paper"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print / Save PDF</span>
+                  <Printer className="w-3.5 h-3.5 text-[#FF4D00]" />
+                  <span>Print</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownloadFromModal}
+                  className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#FF4D00] text-black text-xs font-bold hover:bg-[#FF7A00] transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)]"
+                  title="Download invoice as PDF"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download PDF</span>
                 </button>
 
                 <button

@@ -35,6 +35,7 @@ import {
   Award,
   BadgeCheck,
   Hash,
+  MapPin,
 } from 'lucide-react';
 import { Designer, Task, TaskSubmission } from '@/types';
 import { adminFetch, uploadMediaFile } from '@/lib/adminApi';
@@ -112,6 +113,7 @@ export default function AdminDesigners({
     joiningDate: '',
     experienceYears: '',
     companyCode: '',
+    address: '',
   });
 
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -414,6 +416,7 @@ export default function AdminDesigners({
       joiningDate: new Date().toISOString().slice(0, 10),
       experienceYears: '',
       companyCode: `SKT-${Math.floor(100 + Math.random() * 900)}`,
+      address: '',
     });
     setModalOpen(true);
   };
@@ -434,6 +437,7 @@ export default function AdminDesigners({
       joiningDate: designer.joiningDate || '',
       experienceYears: designer.experienceYears || '',
       companyCode: designer.companyCode || '',
+      address: designer.address || '',
     });
     setModalOpen(true);
   };
@@ -1003,6 +1007,10 @@ export default function AdminDesigners({
                     <span className="text-[#A3A3A3] font-mono">{inspectingDesigner.joiningDate || 'N/A'}</span>
                   </div>
                   <div className="sm:col-span-2">
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Address</span>
+                    <span className="text-white text-[11px] block truncate">{inspectingDesigner.address || 'N/A'}</span>
+                  </div>
+                  <div className="sm:col-span-2">
                     <span className="text-[10px] uppercase font-semibold text-[#737373] block">Account / Payout Details</span>
                     <span className="text-white font-mono text-[11px] block truncate">{inspectingDesigner.accountDetails || 'N/A'}</span>
                   </div>
@@ -1325,7 +1333,7 @@ export default function AdminDesigners({
                 </div>
 
                 {/* Joining Date */}
-                <div className="space-y-1.5 sm:col-span-2">
+                <div className="space-y-1.5">
                   <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
                     <Calendar className="w-3.5 h-3.5 text-[#FF4D00]" />
                     <span>Company Joining Date</span>
@@ -1335,6 +1343,21 @@ export default function AdminDesigners({
                     value={formData.joiningDate}
                     onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
                     className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
+                  />
+                </div>
+
+                {/* Designer Full Address */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Designer Full Address</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Street, City, State, Country"
+                    value={formData.address}
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
               </div>

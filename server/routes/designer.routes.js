@@ -246,6 +246,7 @@ router.post('/', requireAdmin, async (req, res) => {
       joiningDate = '',
       experienceYears = '',
       companyCode = '',
+      address = '',
     } = req.body;
 
     if (!name || !email) {
@@ -266,6 +267,7 @@ router.post('/', requireAdmin, async (req, res) => {
       joiningDate: String(joiningDate || '').trim(),
       experienceYears: String(experienceYears || '').trim(),
       companyCode: String(companyCode || '').trim(),
+      address: String(address || '').trim(),
       token,
       status: 'active',
       notes: notes.trim(),
@@ -321,6 +323,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
       joiningDate,
       experienceYears,
       companyCode,
+      address,
     } = req.body;
     const effectiveToken = (token || password)?.trim();
 
@@ -342,6 +345,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
           if (joiningDate !== undefined) designer.joiningDate = String(joiningDate).trim();
           if (experienceYears !== undefined) designer.experienceYears = String(experienceYears).trim();
           if (companyCode !== undefined) designer.companyCode = String(companyCode).trim();
+          if (address !== undefined) designer.address = String(address).trim();
           await designer.save();
           return res.json(designer);
         }
@@ -371,6 +375,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
           ...(joiningDate !== undefined && { joiningDate: String(joiningDate).trim() }),
           ...(experienceYears !== undefined && { experienceYears: String(experienceYears).trim() }),
           ...(companyCode !== undefined && { companyCode: String(companyCode).trim() }),
+          ...(address !== undefined && { address: String(address).trim() }),
         };
         updatedDesigner = db.designers[idx];
       }

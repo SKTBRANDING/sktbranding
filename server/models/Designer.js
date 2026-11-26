@@ -14,6 +14,7 @@ const DesignerSchema = new mongoose.Schema(
     joiningDate: { type: String, default: '' },
     experienceYears: { type: String, default: '' },
     companyCode: { type: String, default: '' },
+    address: { type: String, default: '' },
     token: { type: String, required: true, unique: true, index: true },
     status: {
       type: String,

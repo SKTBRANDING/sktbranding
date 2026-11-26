@@ -5,6 +5,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const Task = require('../models/Task');
 const Designer = require('../models/Designer');
+const Invoice = require('../models/Invoice');
 const { requireAdmin, requireDesigner, requireAnyAuth } = require('../middleware/auth');
 const { upload, getFileCategory } = require('../middleware/upload');
 const { isCloudinaryConfigured, uploadToCloudinary } = require('../config/cloudinary');
@@ -165,7 +166,7 @@ router.post('/', requireAdmin, async (req, res) => {
 
     let assignedDesignerName = null;
     let initialStatus = 'available';
-    let assignedAt = undefined;
+    let assignedAt = req.body.assignedAt ? new Date(req.body.assignedAt).toISOString() : undefined;
 
     if (assignedDesignerId) {
       const db = getJsonDb();
@@ -174,9 +175,11 @@ router.post('/', requireAdmin, async (req, res) => {
       if (d) {
         assignedDesignerName = d.name;
         initialStatus = 'assigned';
-        assignedAt = new Date().toISOString();
+        assignedAt = req.body.assignedAt ? new Date(req.body.assignedAt).toISOString() : new Date().toISOString();
       }
     }
+
+    const rate = req.body.rate !== undefined ? Math.max(0, Number(req.body.rate)) : 300;
 
     const newTaskData = {
       id: `task-${crypto.randomUUID().slice(0, 8)}`,
@@ -188,6 +191,7 @@ router.post('/', requireAdmin, async (req, res) => {
       deliverables: deliverables ? deliverables.trim() : '',
       dimensions: dimensions.trim(),
       fileFormats: fileFormats.trim(),
+      rate,
       priority,
       status: initialStatus,
       assignedDesignerId: assignedDesignerId || null,
@@ -264,8 +268,10 @@ router.put('/:id', requireAdmin, async (req, res) => {
           if (body.deliverables !== undefined) task.deliverables = body.deliverables.trim();
           if (body.dimensions !== undefined) task.dimensions = body.dimensions.trim();
           if (body.fileFormats !== undefined) task.fileFormats = body.fileFormats.trim();
+          if (body.rate !== undefined) task.rate = Math.max(0, Number(body.rate));
           if (body.priority !== undefined) task.priority = body.priority;
           if (body.deadline !== undefined) task.deadline = body.deadline;
+          if (body.assignedAt !== undefined) task.assignedAt = body.assignedAt;
           if (body.status !== undefined) task.status = body.status;
           if (body.referenceFiles !== undefined) task.referenceFiles = body.referenceFiles;
           await task.save();
@@ -405,6 +411,209 @@ router.post('/:id/start', requireDesigner, async (req, res) => {
 });
 
 // ==========================================
+// Helper: Automatically Accumulate Deliverables on Client Billing Invoice
+// ==========================================
+async function recordSubmissionToClientInvoice(task) {
+  try {
+    if (!task) return;
+    const clientName = (task.client || '').trim();
+    if (!clientName) return;
+
+    const rate = Math.max(0, Number(task.rate) || 300);
+    const itemDescription = (task.title || 'Creative Deliverable').trim();
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dueDateStr = task.deadline
+      ? String(task.deadline).slice(0, 10)
+      : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // 1. Sync to Mongo if connected
+    if (isMongoConnected()) {
+      try {
+        const clientRegex = new RegExp(`^${clientName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+        let invoice = await Invoice.findOne({
+          clientName: clientRegex,
+          status: { $in: ['pending', 'draft', 'partially_paid'] },
+        }).sort({ createdAt: -1 });
+
+        if (invoice) {
+          if (!Array.isArray(invoice.items)) invoice.items = [];
+          const existingItem = invoice.items.find(
+            (it) => (it.description || '').trim().toLowerCase() === itemDescription.toLowerCase()
+          );
+
+          if (existingItem) {
+            existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
+            existingItem.rate = rate;
+            existingItem.amount = Number((existingItem.quantity * existingItem.rate).toFixed(2));
+          } else {
+            invoice.items.push({
+              id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
+              description: itemDescription,
+              category: 'Design & Creative',
+              quantity: 1,
+              rate: rate,
+              amount: rate,
+            });
+          }
+
+          const subtotal = Number(invoice.items.reduce((acc, it) => acc + (Number(it.amount) || 0), 0).toFixed(2));
+          const discountAmount = Number(((subtotal * (invoice.discountRate || 0)) / 100).toFixed(2));
+          const taxable = Math.max(0, subtotal - discountAmount);
+          const taxAmount = Number(((taxable * (invoice.taxRate || 0)) / 100).toFixed(2));
+          const total = Number((taxable + taxAmount).toFixed(2));
+          const balanceDue = Number(Math.max(0, total - (invoice.amountPaid || 0)).toFixed(2));
+
+          invoice.subtotal = subtotal;
+          invoice.taxAmount = taxAmount;
+          invoice.discountAmount = discountAmount;
+          invoice.total = total;
+          invoice.balanceDue = balanceDue;
+          if (!invoice.currency) invoice.currency = 'INR';
+
+          await invoice.save();
+        } else {
+          const count = await Invoice.countDocuments();
+          const year = new Date().getFullYear();
+          const invoiceNumber = `SKT-INV-${year}-${String(count + 1).padStart(3, '0')}`;
+
+          const newInv = new Invoice({
+            id: `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+            invoiceNumber,
+            clientId: '',
+            clientName,
+            clientEmail: `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
+            clientCompany: clientName,
+            projectName: `${itemDescription}`,
+            issueDate: todayStr,
+            dueDate: dueDateStr,
+            items: [
+              {
+                id: `item-${Date.now()}`,
+                description: itemDescription,
+                category: 'Design & Creative',
+                quantity: 1,
+                rate: rate,
+                amount: rate,
+              },
+            ],
+            subtotal: rate,
+            taxRate: 0,
+            taxAmount: 0,
+            discountRate: 0,
+            discountAmount: 0,
+            total: rate,
+            amountPaid: 0,
+            balanceDue: rate,
+            status: 'pending',
+            currency: 'INR',
+            paymentMethod: 'bank_transfer',
+            paymentDetails: 'SKT BRANDING AGENCY • Wire / UPI / Bank Transfer',
+            notes: `Auto-generated billing invoice upon deliverables submission for ${itemDescription}.`,
+          });
+          await newInv.save();
+        }
+      } catch (mongoErr) {
+        console.warn('[Task Route] Error recording invoice in Mongo:', mongoErr.message);
+      }
+    }
+
+    // 2. Always sync to JSON DB fallback (data/db.json)
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.invoices)) db.invoices = [];
+      const clientLower = clientName.toLowerCase();
+      const existingInv = db.invoices.find(
+        (inv) =>
+          (inv.clientName || '').trim().toLowerCase() === clientLower &&
+          ['pending', 'draft', 'partially_paid'].includes(inv.status)
+      );
+
+      if (existingInv) {
+        if (!Array.isArray(existingInv.items)) existingInv.items = [];
+        const existingItem = existingInv.items.find(
+          (it) => (it.description || '').trim().toLowerCase() === itemDescription.toLowerCase()
+        );
+
+        if (existingItem) {
+          existingItem.quantity = (Number(existingItem.quantity) || 1) + 1;
+          existingItem.rate = rate;
+          existingItem.amount = Number((existingItem.quantity * existingItem.rate).toFixed(2));
+        } else {
+          existingInv.items.push({
+            id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
+            description: itemDescription,
+            category: 'Design & Creative',
+            quantity: 1,
+            rate: rate,
+            amount: rate,
+          });
+        }
+
+        const subtotal = Number(existingInv.items.reduce((acc, it) => acc + (Number(it.amount) || 0), 0).toFixed(2));
+        const discountAmount = Number(((subtotal * (existingInv.discountRate || 0)) / 100).toFixed(2));
+        const taxable = Math.max(0, subtotal - discountAmount);
+        const taxAmount = Number(((taxable * (existingInv.taxRate || 0)) / 100).toFixed(2));
+        const total = Number((taxable + taxAmount).toFixed(2));
+        const balanceDue = Number(Math.max(0, total - (existingInv.amountPaid || 0)).toFixed(2));
+
+        existingInv.subtotal = subtotal;
+        existingInv.taxAmount = taxAmount;
+        existingInv.discountAmount = discountAmount;
+        existingInv.total = total;
+        existingInv.balanceDue = balanceDue;
+        if (!existingInv.currency) existingInv.currency = 'INR';
+        existingInv.updatedAt = new Date().toISOString();
+      } else {
+        const year = new Date().getFullYear();
+        const invoiceNumber = `SKT-INV-${year}-${String((db.invoices.length || 0) + 1).padStart(3, '0')}`;
+        const newInv = {
+          id: `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+          invoiceNumber,
+          clientId: '',
+          clientName,
+          clientEmail: `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
+          clientPhone: '',
+          clientCompany: clientName,
+          clientAddress: '',
+          projectId: '',
+          projectName: itemDescription,
+          issueDate: todayStr,
+          dueDate: dueDateStr,
+          items: [
+            {
+              id: `item-${Date.now()}`,
+              description: itemDescription,
+              category: 'Design & Creative',
+              quantity: 1,
+              rate: rate,
+              amount: rate,
+            },
+          ],
+          subtotal: rate,
+          taxRate: 0,
+          taxAmount: 0,
+          discountRate: 0,
+          discountAmount: 0,
+          total: rate,
+          amountPaid: 0,
+          balanceDue: rate,
+          status: 'pending',
+          currency: 'INR',
+          paymentMethod: 'bank_transfer',
+          paymentDetails: 'SKT BRANDING AGENCY • Wire / UPI / Bank Transfer',
+          notes: `Auto-generated billing invoice upon deliverables submission for ${itemDescription}.`,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        db.invoices.unshift(newInv);
+      }
+      return db;
+    });
+  } catch (err) {
+    console.warn('[Task Route] recordSubmissionToClientInvoice failed:', err.message);
+  }
+}
+
+// ==========================================
 // POST /api/tasks/:id/submit (Designer Submit Deliverables & Voice Walkthrough)
 // ==========================================
 router.post('/:id/submit', requireDesigner, async (req, res) => {
@@ -451,6 +660,9 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
             task.status = newStatus;
             await task.save();
 
+            // Automatically record/accumulate deliverables in client billing invoice
+            await recordSubmissionToClientInvoice(task);
+
             return res.json({
               success: true,
               message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
@@ -492,6 +704,10 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
     });
 
     if (!updated) return res.status(403).json({ error: 'Forbidden: You are not assigned to this work.' });
+
+    // Automatically record/accumulate deliverables in client billing invoice
+    await recordSubmissionToClientInvoice(updated);
+
     return res.json({
       success: true,
       message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
