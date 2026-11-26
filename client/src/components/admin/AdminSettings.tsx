@@ -29,10 +29,12 @@ interface AdminSettingsProps {
 }
 
 export default function AdminSettings({ settings, onRefresh, showToast }: AdminSettingsProps) {
-  const [formData, setFormData] = useState<AgencySettings>({
+  const [formData, setFormData] = useState<AgencySettings>(() => ({
     ...(settings || {}),
+    agencyName: settings?.agencyName || 'SKT Branding',
+    tagline: settings?.tagline || 'Crafting Identity & Culture',
     socialLinks: { ...((settings && settings.socialLinks) || {}) },
-  });
+  } as AgencySettings));
 
   const [saving, setSaving] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);

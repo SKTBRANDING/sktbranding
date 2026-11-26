@@ -123,7 +123,7 @@ export default function Footer({ settings }: FooterProps) {
           <div className="flex items-center gap-6">
             <span>Built with Next.js, TypeScript & Tailwind CSS</span>
             <Link
-              href="/admin"
+              to="/admin"
               className="inline-flex items-center gap-1.5 text-[#737373] hover:text-[#FF4D00] transition-colors"
             >
               <Lock className="w-3 h-3 text-[#FF4D00]" />

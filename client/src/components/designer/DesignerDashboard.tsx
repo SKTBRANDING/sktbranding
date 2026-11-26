@@ -360,6 +360,7 @@ export default function DesignerDashboard({
             name: file.name,
             url: data.url,
             size: file.size,
+            type: file.type || 'application/octet-stream',
             mimeType: file.type || 'application/octet-stream',
             category: getCategory(file.name, file.type),
             uploadedAt: new Date().toISOString(),

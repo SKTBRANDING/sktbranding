@@ -186,10 +186,11 @@ export interface TaskAttachment {
   name: string;
   url: string;
   size: number; // in bytes
-  type: string; // extension or mime type
+  type?: string; // extension or mime type
   uploadedAt: string;
-  category?: 'image' | 'pdf' | 'model' | 'audio' | 'archive' | 'design' | 'doc';
+  category?: 'image' | 'pdf' | 'model' | 'audio' | 'archive' | 'design' | 'doc' | 'document' | string;
   duration?: number; // audio duration in seconds
+  mimeType?: string;
 }
 
 export interface TaskSubmission {
@@ -229,6 +230,7 @@ export interface Task {
   clientEmail?: string;
   clientAddress?: string;
   serviceCategory?: string;
+  category?: string;
   serviceName?: string;
   brief: string;
   textContent?: string; // Text content / copy to be incorporated into design

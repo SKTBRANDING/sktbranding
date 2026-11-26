@@ -29,7 +29,7 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
   // Deep clone initial content state with safe null guards
-  const [formData, setFormData] = useState<WebsiteContent>({
+  const [formData, setFormData] = useState<WebsiteContent>(() => ({
     hero: {
       ...(content?.hero || {}),
       stats: [...(content?.hero?.stats || [])],
@@ -46,7 +46,7 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
     finalCta: {
       ...(content?.finalCta || {}),
     },
-  });
+  } as WebsiteContent));
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();

@@ -177,7 +177,7 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
 
         <div className="text-center mt-6">
           <Link
-            href="/"
+            to="/"
             className="text-xs text-[#737373] hover:text-[#A3A3A3] transition-colors"
           >
             ← Return to Public Agency Website

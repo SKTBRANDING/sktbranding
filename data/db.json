@@ -575,8 +575,101 @@
       "address": "Padu Mahal  Mogar Mogral Puthur P.0 Mogral Puthur, Kasaragod  671124"
     }
   ],
-  "tasks": [],
+  "tasks": [
+    {
+      "id": "task-c85d4b08",
+      "title": "poster",
+      "client": "BAITUL RASA",
+      "clientCompany": "",
+      "clientPhone": "",
+      "clientEmail": "",
+      "clientAddress": "",
+      "serviceCategory": "Poster Design",
+      "serviceName": "Poster Design",
+      "brief": "AFDFAD",
+      "textContent": "",
+      "voiceBrief": null,
+      "deliverables": "",
+      "dimensions": "1080x1920 (9:16)",
+      "fileFormats": "AI, PSD, PDF, High-Res PNG",
+      "rate": 300,
+      "priority": "medium",
+      "status": "completed",
+      "assignedDesignerId": "des-d8c6af6a",
+      "assignedDesignerName": "FATHIMA",
+      "assignedAt": "2026-11-26T00:00:00.000Z",
+      "deadline": "2026-12-03",
+      "referenceFiles": [],
+      "submissions": [
+        {
+          "id": "sub-7149fdf5",
+          "version": 1,
+          "versionLabel": "Original Submission",
+          "submittedAt": "2026-11-26T19:13:33.271Z",
+          "designerId": "des-d8c6af6a",
+          "designerName": "FATHIMA",
+          "notes": "",
+          "files": [
+            {
+              "id": "att_1795720411509_06kzp",
+              "name": "3.jpg",
+              "url": "https://res.cloudinary.com/unzkhevi/image/upload/v1795720410/sktbranding/1795720406752_3.jpg",
+              "size": 2865089,
+              "type": "image/jpeg",
+              "mimeType": "image/jpeg",
+              "category": "image",
+              "uploadedAt": "2026-11-26T19:13:31.509Z"
+            }
+          ],
+          "designerVoiceNote": null,
+          "reviewStatus": "approved",
+          "adminFeedback": "Work approved!",
+          "reviewedAt": "2026-11-26T19:14:12.567Z"
+        }
+      ],
+      "createdAt": "2026-11-26T19:13:04.929Z"
+    }
+  ],
   "invoices": [
+    {
+      "id": "inv-1795720413273-f810a45a",
+      "invoiceNumber": "SKT-INV-2026-003",
+      "clientId": "",
+      "clientName": "BAITUL RASA",
+      "clientEmail": "billing@baitulrasa.com",
+      "clientPhone": "",
+      "clientCompany": "BAITUL RASA",
+      "clientAddress": "",
+      "projectId": "",
+      "projectName": "poster",
+      "issueDate": "2026-11-26",
+      "dueDate": "2026-12-03",
+      "items": [
+        {
+          "id": "item-1795720413273",
+          "description": "poster",
+          "category": "Poster Design",
+          "quantity": 1,
+          "rate": 300,
+          "amount": 300
+        }
+      ],
+      "subtotal": 300,
+      "taxRate": 0,
+      "taxAmount": 0,
+      "discountRate": 0,
+      "discountAmount": 0,
+      "total": 300,
+      "amountPaid": 0,
+      "balanceDue": 300,
+      "status": "pending",
+      "currency": "INR",
+      "paymentMethod": "bank_transfer",
+      "paymentDetails": "SKT BRANDING AGENCY • Wire / UPI / Bank Transfer",
+      "notes": "Auto-generated billing invoice upon deliverables submission for poster.",
+      "createdAt": "2026-11-26T19:13:33.273Z",
+      "updatedAt": "2026-11-26T19:13:33.273Z"
+    },
     {
       "id": "inv-1795703202493-dc927f72",
       "invoiceNumber": "SKT-INV-2026-002",
@@ -724,7 +817,7 @@
         }
       ],
       "createdAt": "2026-11-26T18:28:43.900Z",
-      "updatedAt": "2026-11-26T18:28:43.901Z"
+      "updatedAt": "2026-11-26T19:05:09.332Z"
     }
   ]
 }

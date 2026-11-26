@@ -119,7 +119,7 @@ export default function Navbar({ settings }: NavbarProps) {
                 Let&apos;s Talk
               </a>
               <Link
-                href="/admin"
+                to="/admin"
                 onClick={() => setMobileMenuOpen(false)}
                 className="text-xs text-center text-[#737373] hover:text-[#A3A3A3] py-1"
               >
