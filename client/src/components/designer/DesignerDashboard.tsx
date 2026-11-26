@@ -136,6 +136,12 @@ export default function DesignerDashboard({
   // Tasks categorized strictly by workflow lifecycle
   const availableTasks = useMemo(() => tasks.filter((t) => t.status === 'available'), [tasks]);
 
+  // 0. Pending Action Works (Assigned + Starting + Revision Requests)
+  const pendingTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'assigned' || t.status === 'in_progress' || t.status === 'revision_requested'),
+    [myAssignedTasks]
+  );
+
   // 1. Assigned Works (Ready to start)
   const assignedTasks = useMemo(
     () => myAssignedTasks.filter((t) => t.status === 'assigned'),
@@ -558,9 +564,9 @@ export default function DesignerDashboard({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           {/* Pending Works */}
           <div
-            onClick={() => setActiveTab('pending')}
+            onClick={() => setActiveTab('assigned')}
             className={`p-4 rounded-2xl border transition-all cursor-pointer ${
-              activeTab === 'pending'
+              activeTab === 'assigned'
                 ? 'bg-[#FF4D00]/15 border-[#FF4D00] shadow-[0_0_20px_rgba(255,77,0,0.25)]'
                 : 'bg-[#0a0a0a] border-white/10 hover:border-white/20'
             }`}
