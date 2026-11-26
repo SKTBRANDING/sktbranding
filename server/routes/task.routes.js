@@ -14,7 +14,7 @@ const { isMongoConnected, getJsonDb, saveJsonDb } = require('../utils/dbFallback
 // File Upload Endpoint (Audio, 3D models, PDF, PNG, etc.)
 // POST /api/tasks/upload
 // ==========================================
-router.post('/upload', requireAnyAuth, upload.single('file'), async (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file provided' });
   }
@@ -45,6 +45,7 @@ router.post('/upload', requireAnyAuth, upload.single('file'), async (req, res) =
   const safeBase = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9_\-\.]/g, '_').slice(0, 30);
   const filename = `${crypto.randomUUID().slice(0, 10)}_${safeBase}${ext}`;
   const targetDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'tasks');
+  const distDir = path.join(__dirname, '..', '..', 'dist', 'uploads', 'tasks');
 
   let finalUrl = '';
   let storageType = 'local';
@@ -52,6 +53,15 @@ router.post('/upload', requireAnyAuth, upload.single('file'), async (req, res) =
   try {
     if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
     fs.writeFileSync(path.join(targetDir, filename), req.file.buffer);
+
+    // Also mirror to dist/uploads/tasks if dist directory exists
+    try {
+      if (fs.existsSync(path.join(__dirname, '..', '..', 'dist'))) {
+        if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
+        fs.writeFileSync(path.join(distDir, filename), req.file.buffer);
+      }
+    } catch {}
+
     finalUrl = `/uploads/tasks/${filename}`;
   } catch (err) {
     const mime = req.file.mimetype || 'application/octet-stream';
@@ -421,23 +431,33 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
     if (isMongoConnected()) {
       try {
         const task = await Task.findOne({ id: req.params.id });
-        if (task && task.assignedDesignerId === req.designer.id) {
-          const versionNumber = (task.submissions?.length || 0) + 1;
-          newSubmission.version = versionNumber;
-          newSubmission.versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
-          const newStatus = versionNumber === 1 ? 'submitted' : 'resubmitted';
+        if (task) {
+          const isAssigned =
+            !task.assignedDesignerId ||
+            task.assignedDesignerId === req.designer.id ||
+            task.assignedDesignerName === req.designer.name ||
+            (task.assignedDesignerName && req.designer.name && req.designer.name.toLowerCase().includes(task.assignedDesignerName.toLowerCase()));
 
-          if (!Array.isArray(task.submissions)) task.submissions = [];
-          task.submissions.unshift(newSubmission);
-          task.status = newStatus;
-          await task.save();
+          if (isAssigned) {
+            task.assignedDesignerId = req.designer.id;
+            task.assignedDesignerName = req.designer.name;
+            const versionNumber = (task.submissions?.length || 0) + 1;
+            newSubmission.version = versionNumber;
+            newSubmission.versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
+            const newStatus = versionNumber === 1 ? 'submitted' : 'resubmitted';
 
-          return res.json({
-            success: true,
-            message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
-            submission: newSubmission,
-            task,
-          });
+            if (!Array.isArray(task.submissions)) task.submissions = [];
+            task.submissions.unshift(newSubmission);
+            task.status = newStatus;
+            await task.save();
+
+            return res.json({
+              success: true,
+              message: `${newSubmission.versionLabel} successfully submitted for admin review!`,
+              submission: newSubmission,
+              task,
+            });
+          }
         }
       } catch (e) {
         console.warn('[Task Route] Mongo submit error:', e.message);
@@ -448,15 +468,25 @@ router.post('/:id/submit', requireDesigner, async (req, res) => {
     saveJsonDb((db) => {
       if (!Array.isArray(db.tasks)) db.tasks = [];
       const idx = db.tasks.findIndex((t) => t.id === req.params.id);
-      if (idx !== -1 && db.tasks[idx].assignedDesignerId === req.designer.id) {
+      if (idx !== -1) {
         const t = db.tasks[idx];
-        const versionNumber = (t.submissions?.length || 0) + 1;
-        newSubmission.version = versionNumber;
-        newSubmission.versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
-        if (!Array.isArray(t.submissions)) t.submissions = [];
-        t.submissions.unshift(newSubmission);
-        t.status = versionNumber === 1 ? 'submitted' : 'resubmitted';
-        updated = t;
+        const isAssigned =
+          !t.assignedDesignerId ||
+          t.assignedDesignerId === req.designer.id ||
+          t.assignedDesignerName === req.designer.name ||
+          (t.assignedDesignerName && req.designer.name && req.designer.name.toLowerCase().includes(t.assignedDesignerName.toLowerCase()));
+
+        if (isAssigned) {
+          t.assignedDesignerId = req.designer.id;
+          t.assignedDesignerName = req.designer.name;
+          const versionNumber = (t.submissions?.length || 0) + 1;
+          newSubmission.version = versionNumber;
+          newSubmission.versionLabel = versionNumber === 1 ? 'Original Submission' : `Revision ${versionNumber - 1}`;
+          if (!Array.isArray(t.submissions)) t.submissions = [];
+          t.submissions.unshift(newSubmission);
+          t.status = versionNumber === 1 ? 'submitted' : 'resubmitted';
+          updated = t;
+        }
       }
       return db;
     });

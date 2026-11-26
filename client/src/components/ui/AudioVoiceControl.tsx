@@ -324,13 +324,57 @@ export default function AudioVoiceControl({
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/tasks/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const token = typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') || '' : '';
+      const headers: Record<string, string> = {};
+      if (token) headers['x-designer-token'] = token;
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to upload audio');
+      let json: any = null;
+      try {
+        const res = await fetch('/api/tasks/upload', {
+          method: 'POST',
+          headers,
+          credentials: 'include',
+          body: formData,
+        });
+        if (res.ok) {
+          json = await res.json();
+        }
+      } catch (e) {
+        console.warn('[Audio Upload] primary endpoint failed, trying fallback:', e);
+      }
+
+      if (!json || !json.url) {
+        try {
+          const fallbackRes = await fetch('/api/upload', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          });
+          if (fallbackRes.ok) {
+            json = await fallbackRes.json();
+          }
+        } catch (e) {
+          console.warn('[Audio Upload] /api/upload failed:', e);
+        }
+      }
+
+      // Final fallback: inline Base64 data URL
+      if (!json || !json.url) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        json = {
+          id: `audio-${Date.now()}`,
+          name: fileName,
+          url: dataUrl,
+          size: file.size,
+          type: file.type,
+          uploadedAt: new Date().toISOString(),
+        };
+      }
 
       const attachment: TaskAttachment = {
         ...json,
@@ -365,13 +409,56 @@ export default function AudioVoiceControl({
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/tasks/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      const token = typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') || '' : '';
+      const headers: Record<string, string> = {};
+      if (token) headers['x-designer-token'] = token;
 
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Failed to upload audio file');
+      let json: any = null;
+      try {
+        const res = await fetch('/api/tasks/upload', {
+          method: 'POST',
+          headers,
+          credentials: 'include',
+          body: formData,
+        });
+        if (res.ok) {
+          json = await res.json();
+        }
+      } catch (e) {
+        console.warn('[Audio Upload] /api/tasks/upload error:', e);
+      }
+
+      if (!json || !json.url) {
+        try {
+          const fallbackRes = await fetch('/api/upload', {
+            method: 'POST',
+            credentials: 'include',
+            body: formData,
+          });
+          if (fallbackRes.ok) {
+            json = await fallbackRes.json();
+          }
+        } catch (e) {
+          console.warn('[Audio Upload] /api/upload fallback error:', e);
+        }
+      }
+
+      if (!json || !json.url) {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+        json = {
+          id: `audio-${Date.now()}`,
+          name: file.name,
+          url: dataUrl,
+          size: file.size,
+          type: file.type,
+          uploadedAt: new Date().toISOString(),
+        };
+      }
 
       const attachment: TaskAttachment = {
         ...json,

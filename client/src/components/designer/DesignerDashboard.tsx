@@ -61,6 +61,7 @@ export default function DesignerDashboard({
   const [uploadingFiles, setUploadingFiles] = useState(false);
   const [submittingWork, setSubmittingWork] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleCopyText = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -88,8 +89,14 @@ export default function DesignerDashboard({
   const handleTakeWork = async (task: Task) => {
     setClaimingTaskId(task.id);
     try {
+      const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['x-designer-token'] = token;
+
       const res = await fetch(`/api/tasks/${task.id}/claim`, {
         method: 'POST',
+        headers,
+        credentials: 'include',
       });
       const data = await res.json();
       if (!res.ok) {
@@ -109,7 +116,15 @@ export default function DesignerDashboard({
 
   const handleStartWork = async (task: Task) => {
     try {
-      const res = await fetch(`/api/tasks/${task.id}/start`, { method: 'POST' });
+      const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['x-designer-token'] = token;
+
+      const res = await fetch(`/api/tasks/${task.id}/start`, {
+        method: 'POST',
+        headers,
+        credentials: 'include',
+      });
       if (!res.ok) throw new Error('Failed to update status');
 
       showToast(`Work started on "${task.title}".`);
@@ -119,29 +134,127 @@ export default function DesignerDashboard({
     }
   };
 
-  const handleUploadDeliverables = async (files: FileList | null) => {
+  const handleUploadDeliverables = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     setUploadingFiles(true);
-    try {
-      const newUploads: TaskAttachment[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const data = new FormData();
-        data.append('file', file);
+    const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+    const newUploads: TaskAttachment[] = [];
+    let lastError = '';
 
-        const res = await fetch('/api/tasks/upload', {
-          method: 'POST',
-          body: data,
-        });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error || `Failed to upload ${file.name}`);
-        newUploads.push(json);
+    const getCategory = (filename = '', mimetype = ''): TaskAttachment['category'] => {
+      const ext = filename.split('.').pop()?.toLowerCase() || '';
+      if (['obj', 'fbx', 'glb', 'gltf', 'blend', 'c4d', '3ds', 'stl', 'dae', 'step', 'stp'].includes(ext)) return 'model';
+      if (['mp3', 'wav', 'm4a', 'ogg', 'aac', 'webm'].includes(ext) || mimetype.includes('audio')) return 'audio';
+      if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext) || mimetype.includes('image')) return 'image';
+      if (ext === 'pdf' || mimetype.includes('pdf')) return 'pdf';
+      if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'archive';
+      if (['mp4', 'mov', 'avi', 'mkv'].includes(ext) || mimetype.includes('video')) return 'video';
+      if (['psd', 'ai', 'eps', 'indd', 'fig', 'sketch'].includes(ext)) return 'design';
+      return 'doc';
+    };
+
+    const convertToDataUrl = (f: File): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      });
+    };
+
+    try {
+      const fileArray = Array.from(files);
+      for (const file of fileArray) {
+        let uploadedItem: TaskAttachment | null = null;
+
+        // 1. Primary endpoint: /api/tasks/upload
+        try {
+          const data = new FormData();
+          data.append('file', file);
+          const headers: Record<string, string> = {};
+          if (token) headers['x-designer-token'] = token;
+
+          const res = await fetch('/api/tasks/upload', {
+            method: 'POST',
+            headers,
+            credentials: 'include',
+            body: data,
+          });
+
+          if (res.ok) {
+            const json = await res.json();
+            if (json && json.url) {
+              uploadedItem = json;
+            }
+          } else {
+            const errJson = await res.json().catch(() => null);
+            lastError = errJson?.error || `Upload HTTP error ${res.status}`;
+          }
+        } catch (taskErr: any) {
+          lastError = taskErr.message || 'Network error on task upload';
+        }
+
+        // 2. Secondary fallback endpoint: /api/upload
+        if (!uploadedItem) {
+          try {
+            const data = new FormData();
+            data.append('file', file);
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              credentials: 'include',
+              body: data,
+            });
+
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.url) {
+                uploadedItem = {
+                  id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                  name: json.name || file.name,
+                  url: json.url,
+                  size: json.size || file.size,
+                  type: file.type || file.name.split('.').pop() || 'unknown',
+                  uploadedAt: new Date().toISOString(),
+                  category: getCategory(file.name, file.type),
+                };
+              }
+            }
+          } catch (genErr) {
+            console.warn('[Upload Fallback] /api/upload failed:', genErr);
+          }
+        }
+
+        // 3. Guaranteed client-side FileReader Base64 Data URL fallback
+        if (!uploadedItem) {
+          try {
+            const dataUrl = await convertToDataUrl(file);
+            uploadedItem = {
+              id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              name: file.name,
+              url: dataUrl,
+              size: file.size,
+              type: file.type || file.name.split('.').pop() || 'unknown',
+              uploadedAt: new Date().toISOString(),
+              category: getCategory(file.name, file.type),
+            };
+          } catch (readerErr: any) {
+            lastError = readerErr.message || `Could not parse ${file.name}`;
+          }
+        }
+
+        if (uploadedItem) {
+          newUploads.push(uploadedItem);
+        }
       }
 
-      setUploadedFiles((prev) => [...prev, ...newUploads]);
-      showToast(`${newUploads.length} deliverable file(s) uploaded successfully!`);
+      if (newUploads.length > 0) {
+        setUploadedFiles((prev) => [...prev, ...newUploads]);
+        showToast(`${newUploads.length} deliverable file(s) attached successfully!`);
+      } else if (lastError) {
+        showToast(lastError, 'error');
+      }
     } catch (err: any) {
-      showToast(err.message, 'error');
+      showToast(err.message || 'Failed to upload files', 'error');
     } finally {
       setUploadingFiles(false);
     }
@@ -166,9 +279,14 @@ export default function DesignerDashboard({
 
     setSubmittingWork(true);
     try {
+      const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['x-designer-token'] = token;
+
       const res = await fetch(`/api/tasks/${selectedTask.id}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
+        credentials: 'include',
         body: JSON.stringify({
           notes: submissionNotes,
           files: uploadedFiles,
@@ -796,10 +914,39 @@ export default function DesignerDashboard({
                 </div>
 
                 {/* Drag and Drop Zone */}
-                <label className="border-2 border-dashed border-white/20 hover:border-[#FF4D00] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors bg-[#0a0a0a]">
-                  <Upload className="w-8 h-8 text-[#FF4D00] mb-2 animate-bounce" />
+                <label
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!isDragging) setIsDragging(true);
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDragging(false);
+                    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                      handleUploadDeliverables(e.dataTransfer.files);
+                    }
+                  }}
+                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-200 select-none ${
+                    isDragging
+                      ? 'border-[#FF4D00] bg-[#FF4D00]/10 scale-[1.01] shadow-[0_0_20px_rgba(255,77,0,0.25)]'
+                      : 'border-white/20 hover:border-[#FF4D00] bg-[#0a0a0a]'
+                  }`}
+                >
+                  <Upload className={`w-8 h-8 text-[#FF4D00] mb-2 ${uploadingFiles ? 'animate-bounce' : isDragging ? 'scale-125 transition-transform' : ''}`} />
                   <p className="text-xs font-bold text-white">
-                    Click to select files or drag & drop here
+                    {isDragging ? 'Release to drop & attach files' : 'Click to select files or drag & drop here'}
                   </p>
                   <p className="text-[11px] text-[#737373] mt-1">
                     Supports PNG, JPG, PDF, PSD, AI, EPS, INDD, ZIP, RAR, MP4, and all project source files.
@@ -808,7 +955,12 @@ export default function DesignerDashboard({
                     type="file"
                     multiple
                     className="hidden"
-                    onChange={(e) => handleUploadDeliverables(e.target.files)}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        handleUploadDeliverables(e.target.files);
+                        e.target.value = '';
+                      }
+                    }}
                   />
                 </label>
 

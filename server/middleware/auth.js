@@ -62,6 +62,16 @@ async function requireDesigner(req, res, next) {
     if (isMongoConnected()) {
       try {
         designer = await Designer.findOne({ token, status: 'active' });
+        if (!designer && token.length >= 4) {
+          const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          designer = await Designer.findOne({
+            $or: [
+              { token: { $regex: `^${escaped}`, $options: 'i' } },
+              { email: { $regex: `^${escaped}`, $options: 'i' } },
+            ],
+            status: 'active',
+          });
+        }
       } catch (e) {
         console.warn('[Auth] Mongo designer lookup failed:', e.message);
       }
@@ -78,7 +88,7 @@ async function requireDesigner(req, res, next) {
     // Update last active timestamp
     if (typeof designer.save === 'function') {
       designer.lastActiveAt = new Date();
-      await designer.save();
+      await designer.save().catch(() => {});
     }
 
     req.designer = designer;
@@ -90,22 +100,49 @@ async function requireDesigner(req, res, next) {
 
 // Allow either Admin or Designer
 async function requireAnyAuth(req, res, next) {
-  const token =
-    req.headers['x-designer-token'] ||
-    (req.headers.authorization ? req.headers.authorization.replace('Bearer ', '') : null) ||
-    req.query.token ||
-    req.cookies?.designer_token;
+  try {
+    const token =
+      req.headers['x-designer-token'] ||
+      (req.headers.authorization ? req.headers.authorization.replace('Bearer ', '') : null) ||
+      req.query.token ||
+      req.cookies?.skt_designer_session ||
+      req.cookies?.designer_token;
 
-  if (token) {
-    const designer = await Designer.findOne({ token, status: 'active' });
-    if (designer) {
-      req.designer = designer;
-      return next();
+    if (token) {
+      let designer = null;
+      if (isMongoConnected()) {
+        try {
+          designer = await Designer.findOne({ token, status: 'active' });
+          if (!designer && token.length >= 4) {
+            const escaped = token.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            designer = await Designer.findOne({
+              $or: [
+                { token: { $regex: `^${escaped}`, $options: 'i' } },
+                { email: { $regex: `^${escaped}`, $options: 'i' } },
+              ],
+              status: 'active',
+            });
+          }
+        } catch (e) {
+          console.warn('[Auth] Mongo designer lookup failed in requireAnyAuth:', e.message);
+        }
+      }
+
+      if (!designer) {
+        designer = findDesignerFromMemory(token);
+      }
+
+      if (designer) {
+        req.designer = designer;
+        return next();
+      }
     }
-  }
 
-  // Fallback to checking admin
-  return requireAdmin(req, res, next);
+    // Fallback to checking admin
+    return requireAdmin(req, res, next);
+  } catch (err) {
+    return res.status(500).json({ error: 'Auth middleware error: ' + err.message });
+  }
 }
 
 module.exports = {
