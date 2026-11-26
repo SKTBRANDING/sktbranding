@@ -68,6 +68,13 @@ export interface FounderInfo {
   enabled: boolean;
 }
 
+export interface BrandLogo {
+  id: string;
+  name: string;
+  tagline: string;
+  image: string;
+}
+
 export interface WebsiteContent {
   hero: {
     badge: string;
@@ -100,6 +107,8 @@ export interface WebsiteContent {
     headline: string;
     supportingCopy: string;
   };
+  marqueeTitle?: string;
+  partnerLogos?: BrandLogo[];
 }
 
 export interface Testimonial {

@@ -59,6 +59,18 @@ const ContentSchema = new mongoose.Schema(
       headline: { type: String, default: 'Command Attention in Your Industry' },
       supportingCopy: { type: String, default: 'Schedule a private consultation with our executive design partners.' },
     },
+    marqueeTitle: {
+      type: String,
+      default: 'TRUSTED BY VISIONARY BRANDS & GLOBAL ENTERPRISES',
+    },
+    partnerLogos: [
+      {
+        id: { type: String, default: '' },
+        name: { type: String, default: '' },
+        tagline: { type: String, default: '' },
+        image: { type: String, default: '' },
+      },
+    ],
   },
   {
     timestamps: true,

@@ -33,7 +33,10 @@ export default function PublicWebsite({ initialData }: PublicWebsiteProps) {
       <Hero content={initialData.content.hero} />
 
       {/* 2.5 Infinite Auto-Sliding Brand Logos (Swiping Right) */}
-      <LogoMarquee />
+      <LogoMarquee
+        logos={initialData.content?.partnerLogos}
+        title={initialData.content?.marqueeTitle}
+      />
 
       {/* 3. Selected Works Portfolio with Filters & Case Study Modal */}
       <Portfolio projects={publishedProjects} />

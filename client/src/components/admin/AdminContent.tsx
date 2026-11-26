@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { WebsiteContent, AgencyStat, CoreValue, ProcessStep } from '@/types';
 import { adminFetch, uploadMediaFile } from '@/lib/adminApi';
+import AdminLogos from './AdminLogos';
 
 interface AdminContentProps {
   content: WebsiteContent;
@@ -23,7 +24,7 @@ interface AdminContentProps {
 }
 
 export default function AdminContent({ content, onRefresh, showToast }: AdminContentProps) {
-  const [activeTab, setActiveTab] = useState<'hero' | 'about' | 'process' | 'cta'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'logos' | 'about' | 'process' | 'cta'>('hero');
   const [saving, setSaving] = useState(false);
   const [uploadingTarget, setUploadingTarget] = useState<string | null>(null);
 
@@ -250,9 +251,10 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
       <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-[#141414] border border-white/10 w-full sm:w-fit overflow-x-auto no-scrollbar">
         {[
           { id: 'hero', label: '1. Hero & Genuine Stats' },
-          { id: 'about', label: '2. About, Values & Founder' },
-          { id: 'process', label: '3. 3-Step Process' },
-          { id: 'cta', label: '4. Final Call to Action' },
+          { id: 'logos', label: '2. Client Logos Slide' },
+          { id: 'about', label: '3. About, Values & Founder' },
+          { id: 'process', label: '4. 3-Step Process' },
+          { id: 'cta', label: '5. Final Call to Action' },
         ].map((tab) => (
           <button
             key={tab.id}
@@ -268,6 +270,15 @@ export default function AdminContent({ content, onRefresh, showToast }: AdminCon
           </button>
         ))}
       </div>
+
+      {/* TAB 2: CLIENT LOGOS SLIDE */}
+      {activeTab === 'logos' && (
+        <AdminLogos
+          content={content}
+          onRefresh={onRefresh}
+          showToast={showToast}
+        />
+      )}
 
       {/* TAB 1: HERO */}
       {activeTab === 'hero' && (

@@ -9,7 +9,7 @@ export interface BrandLogo {
   image: string;
 }
 
-const defaultLogos: BrandLogo[] = [
+export const defaultBrandLogos: BrandLogo[] = [
   { id: 'logo-1', name: 'Aethelgard', tagline: 'Distillers Co.', image: '/logos/logo-1.svg' },
   { id: 'logo-2', name: 'Kromos', tagline: 'Soundworks Berlin', image: '/logos/logo-2.svg' },
   { id: 'logo-3', name: 'Vanguard', tagline: 'Atelier Zurich', image: '/logos/logo-3.svg' },
@@ -22,19 +22,25 @@ const defaultLogos: BrandLogo[] = [
   { id: 'logo-10', name: 'Veloce', tagline: 'Corse Modena', image: '/logos/logo-10.svg' },
 ];
 
+export const defaultLogos = defaultBrandLogos;
+
 interface LogoMarqueeProps {
   logos?: BrandLogo[];
   title?: string;
 }
 
 export default function LogoMarquee({
-  logos = defaultLogos,
+  logos = defaultBrandLogos,
   title = 'TRUSTED BY VISIONARY BRANDS & GLOBAL ENTERPRISES',
 }: LogoMarqueeProps) {
-  // Safe 10 logos array
-  const activeLogos = logos && logos.length >= 10 ? logos.slice(0, 10) : defaultLogos;
-  // Quadruple 10 logos so continuous rightward sliding is completely seamless on any screen width
-  const duplicatedLogos = [...activeLogos, ...activeLogos, ...activeLogos, ...activeLogos];
+  // Use custom uploaded logos if present, or fallback to default 10 logos
+  const activeLogos = logos && logos.length > 0 ? logos : defaultBrandLogos;
+
+  // Duplicate logos enough times so continuous rightward sliding is completely seamless on any screen width
+  let duplicatedLogos = [...activeLogos];
+  while (duplicatedLogos.length < 24) {
+    duplicatedLogos = [...duplicatedLogos, ...activeLogos];
+  }
 
   return (
     <section

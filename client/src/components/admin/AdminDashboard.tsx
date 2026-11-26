@@ -21,6 +21,7 @@ import {
   Briefcase,
   Users,
   Receipt,
+  Sliders,
 } from 'lucide-react';
 import { DatabaseSchema, Inquiry } from '@/types';
 import { clearAdminToken, adminFetch } from '@/lib/adminApi';
@@ -34,6 +35,7 @@ import AdminSettings from './AdminSettings';
 import AdminTasks from './AdminTasks';
 import AdminDesigners from './AdminDesigners';
 import AdminBilling from './AdminBilling';
+import AdminLogos from './AdminLogos';
 
 interface AdminDashboardProps {
   initialData: DatabaseSchema;
@@ -145,6 +147,12 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
       count: (data.designers || []).length,
     },
     { id: 'projects', label: 'Projects', icon: FolderKanban, count: data.projects.length },
+    {
+      id: 'logos',
+      label: 'Client Logos Slide',
+      icon: Sliders,
+      count: (data.content?.partnerLogos || []).length || 10,
+    },
     { id: 'services', label: 'Services', icon: Wrench, count: data.services.length },
     { id: 'content', label: 'Website Content', icon: Sparkles },
     { id: 'testimonials', label: 'Testimonials', icon: Quote, count: data.testimonials.length },
@@ -405,6 +413,14 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
           {activeTab === 'projects' && (
             <AdminProjects
               projects={data.projects}
+              onRefresh={refreshData}
+              showToast={showToast}
+            />
+          )}
+
+          {activeTab === 'logos' && (
+            <AdminLogos
+              content={data.content}
               onRefresh={refreshData}
               showToast={showToast}
             />
