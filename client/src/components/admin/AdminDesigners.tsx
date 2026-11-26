@@ -29,9 +29,31 @@ import {
   FileCheck,
   TrendingUp,
   ChevronRight,
+  Phone,
+  Camera,
+  CreditCard,
+  Award,
+  BadgeCheck,
+  Hash,
 } from 'lucide-react';
 import { Designer, Task, TaskSubmission } from '@/types';
 import { adminFetch, uploadMediaFile } from '@/lib/adminApi';
+
+const InstagramIcon = ({ className = 'w-3.5 h-3.5' }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+    <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+  </svg>
+);
 
 interface DesignerWithStats extends Designer {
   stats?: {
@@ -75,6 +97,7 @@ export default function AdminDesigners({
   const [updatingPassword, setUpdatingPassword] = useState(false);
 
   // Form state for create / edit modal
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -82,7 +105,32 @@ export default function AdminDesigners({
     avatar: '',
     notes: '',
     token: '',
+    instagram: '',
+    phone: '',
+    accountDetails: '',
+    dateOfBirth: '',
+    joiningDate: '',
+    experienceYears: '',
+    companyCode: '',
   });
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAvatar(true);
+    try {
+      const url = await uploadMediaFile(file);
+      if (url) {
+        setFormData((prev) => ({ ...prev, avatar: url }));
+        showToast('Designer photo uploaded successfully!');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Photo upload failed', 'error');
+    } finally {
+      setUploadingAvatar(false);
+      e.target.value = '';
+    }
+  };
 
   // Calculate Productivity & Submissions Analytics for each designer
   const designerAnalytics = useMemo(() => {
@@ -359,6 +407,13 @@ export default function AdminDesigners({
       avatar: '',
       notes: '',
       token: '',
+      instagram: '',
+      phone: '',
+      accountDetails: '',
+      dateOfBirth: '',
+      joiningDate: new Date().toISOString().slice(0, 10),
+      experienceYears: '',
+      companyCode: `SKT-${Math.floor(100 + Math.random() * 900)}`,
     });
     setModalOpen(true);
   };
@@ -372,6 +427,13 @@ export default function AdminDesigners({
       avatar: designer.avatar || '',
       notes: designer.notes || '',
       token: designer.token || '',
+      instagram: designer.instagram || '',
+      phone: designer.phone || '',
+      accountDetails: designer.accountDetails || '',
+      dateOfBirth: designer.dateOfBirth || '',
+      joiningDate: designer.joiningDate || '',
+      experienceYears: designer.experienceYears || '',
+      companyCode: designer.companyCode || '',
     });
     setModalOpen(true);
   };
@@ -611,8 +673,13 @@ export default function AdminDesigners({
                       </div>
                     )}
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="text-base font-bold text-white tracking-tight">{designer.name}</h3>
+                        {designer.companyCode && (
+                          <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-[#FF4D00]/15 text-[#FF4D00] border border-[#FF4D00]/30">
+                            {designer.companyCode}
+                          </span>
+                        )}
                         <span
                           className={`text-[9px] uppercase font-bold px-2 py-0.5 rounded-full ${
                             designer.status === 'active'
@@ -623,8 +690,27 @@ export default function AdminDesigners({
                           {designer.status}
                         </span>
                       </div>
-                      <p className="text-xs text-[#A3A3A3]">{designer.specialty}</p>
-                      <p className="text-[11px] text-[#737373] font-mono mt-0.5">{designer.email}</p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[#A3A3A3] mt-0.5">
+                        <span>{designer.specialty}</span>
+                        {designer.experienceYears && (
+                          <span className="text-[11px] text-[#A3A3A3] flex items-center gap-1">
+                            • <Award className="w-3 h-3 text-[#FF4D00]" /> {designer.experienceYears}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[#737373] font-mono mt-0.5">
+                        <span>{designer.email}</span>
+                        {designer.phone && (
+                          <span className="flex items-center gap-1 text-[#A3A3A3]">
+                            • <Phone className="w-3 h-3 text-emerald-400" /> {designer.phone}
+                          </span>
+                        )}
+                        {designer.instagram && (
+                          <span className="flex items-center gap-1 text-[#A3A3A3]">
+                            • <InstagramIcon className="w-3 h-3 text-pink-400" /> {designer.instagram}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -845,12 +931,25 @@ export default function AdminDesigners({
             {/* Modal Header */}
             <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#121212]">
               <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 rounded-2xl bg-[#1a1a1a] border border-[#FF4D00]/50 flex items-center justify-center text-[#FF4D00] font-black">
-                  {inspectingDesigner.name[0]}
-                </div>
+                {inspectingDesigner.avatar ? (
+                  <img
+                    src={inspectingDesigner.avatar}
+                    alt={inspectingDesigner.name}
+                    className="w-12 h-12 rounded-2xl object-cover border border-[#FF4D00]/50 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-2xl bg-[#1a1a1a] border border-[#FF4D00]/50 flex items-center justify-center text-[#FF4D00] font-black text-lg flex-shrink-0">
+                    {inspectingDesigner.name[0]}
+                  </div>
+                )}
                 <div>
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2 flex-wrap">
                     <span>{inspectingDesigner.name}</span>
+                    {inspectingDesigner.companyCode && (
+                      <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#FF4D00]/15 text-[#FF4D00] border border-[#FF4D00]/30 font-bold">
+                        {inspectingDesigner.companyCode}
+                      </span>
+                    )}
                     <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
                       {inspectingDesigner.specialty}
                     </span>
@@ -872,6 +971,43 @@ export default function AdminDesigners({
 
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
+              {/* Personnel Dossier & Contact Information */}
+              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 space-y-3">
+                <h4 className="text-xs uppercase font-bold tracking-wider text-white flex items-center gap-2">
+                  <BadgeCheck className="w-4 h-4 text-[#FF4D00]" />
+                  <span>Personnel Profile & Payroll Details</span>
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Company Code</span>
+                    <span className="font-mono text-white font-bold">{inspectingDesigner.companyCode || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Phone Number</span>
+                    <span className="text-white">{inspectingDesigner.phone || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Instagram</span>
+                    <span className="text-[#FF7A00]">{inspectingDesigner.instagram || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Experience</span>
+                    <span className="text-white">{inspectingDesigner.experienceYears || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Date of Birth</span>
+                    <span className="text-[#A3A3A3] font-mono">{inspectingDesigner.dateOfBirth || 'N/A'}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Joining Date</span>
+                    <span className="text-[#A3A3A3] font-mono">{inspectingDesigner.joiningDate || 'N/A'}</span>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <span className="text-[10px] uppercase font-semibold text-[#737373] block">Account / Payout Details</span>
+                    <span className="text-white font-mono text-[11px] block truncate">{inspectingDesigner.accountDetails || 'N/A'}</span>
+                  </div>
+                </div>
+              </div>
               {(() => {
                 const stats = designerAnalytics.get(inspectingDesigner.id);
                 if (!stats) return null;
@@ -1000,7 +1136,7 @@ export default function AdminDesigners({
       {/* CREATE / EDIT DESIGNER MODAL */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-lg rounded-3xl bg-[#0e0e0e] border border-white/10 p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="w-full max-w-2xl max-h-[92vh] overflow-y-auto rounded-3xl bg-[#0e0e0e] border border-white/10 p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between border-b border-white/10 pb-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <UserPlus className="w-5 h-5 text-[#FF4D00]" />
@@ -1015,45 +1151,206 @@ export default function AdminDesigners({
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                  Designer Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. FIDHA WAFIYYA"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                />
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Photo Upload Section */}
+              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 flex items-center gap-4">
+                <div className="relative flex-shrink-0">
+                  {formData.avatar ? (
+                    <img
+                      src={formData.avatar}
+                      alt="Designer Preview"
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-[#FF4D00]"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-[#090909] border border-white/20 flex flex-col items-center justify-center text-[#A3A3A3]">
+                      <Camera className="w-6 h-6 text-[#FF4D00]" />
+                      <span className="text-[9px] uppercase font-bold mt-1">Photo</span>
+                    </div>
+                  )}
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/70 rounded-2xl flex items-center justify-center">
+                      <RefreshCw className="w-5 h-5 text-[#FF4D00] animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex-1 space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <label className="cursor-pointer px-3.5 py-1.5 rounded-xl bg-[#FF4D00] hover:bg-[#FF6A26] text-black text-xs font-bold transition-all shadow-md inline-flex items-center gap-1.5">
+                      <Camera className="w-3.5 h-3.5" />
+                      <span>{uploadingAvatar ? 'Uploading...' : formData.avatar ? 'Change Photo' : 'Upload Designer Photo'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        disabled={uploadingAvatar}
+                        className="hidden"
+                      />
+                    </label>
+
+                    {formData.avatar && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, avatar: '' })}
+                        className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-red-500/20 text-[#A3A3A3] hover:text-red-400 text-xs transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-[#737373]">
+                    Upload official designer profile picture. Square (1:1) JPG, PNG, WEBP recommended.
+                  </p>
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                  Designer Email Address *
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="e.g. fida@gmail.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                />
+              {/* 2-Column Responsive Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Company Code */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <Hash className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Company Code Number</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. SKT-DSG-01"
+                    value={formData.companyCode}
+                    onChange={(e) => setFormData({ ...formData, companyCode: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Full Name */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
+                    Designer Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. FATHIMA"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Email Address */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
+                    Designer Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. sktdesigns50@gmail.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Phone Number</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. +91 98765 43210"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Specialty */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
+                    Design Specialty / Role
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Brand Identity & Typography"
+                    value={formData.specialty}
+                    onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Work Experience */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <Award className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Work Experience Year</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 3 Years, 5+ Years"
+                    value={formData.experienceYears}
+                    onChange={(e) => setFormData({ ...formData, experienceYears: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Instagram URL or ID */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <InstagramIcon className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Instagram URL or ID (Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. @skt_designer or instagram.com/..."
+                    value={formData.instagram}
+                    onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                </div>
+
+                {/* Date of Birth */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Date of Birth</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
+                  />
+                </div>
+
+                {/* Joining Date */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Company Joining Date</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.joiningDate}
+                    onChange={(e) => setFormData({ ...formData, joiningDate: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
+                  />
+                </div>
               </div>
 
+              {/* Account Details for Payouts */}
               <div className="space-y-1.5">
-                <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                  Design Specialty / Role
+                <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                  <CreditCard className="w-3.5 h-3.5 text-[#FF4D00]" />
+                  <span>Account Details (Bank, IBAN / SWIFT, UPI)</span>
                 </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Meta Ad Poster, Brand Architecture, 3D Motion"
-                  value={formData.specialty}
-                  onChange={(e) => setFormData({ ...formData, specialty: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Bank Name, Account Number / IBAN, SWIFT / IFSC Code for salary payouts"
+                  value={formData.accountDetails}
+                  onChange={(e) => setFormData({ ...formData, accountDetails: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono resize-none"
                 />
               </div>
 

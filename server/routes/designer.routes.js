@@ -231,7 +231,22 @@ router.get('/', requireAdmin, async (req, res) => {
 // ==========================================
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, email, specialty = 'Brand Designer', avatar = '', notes = '', token: customToken, password } = req.body;
+    const {
+      name,
+      email,
+      specialty = 'Brand Designer',
+      avatar = '',
+      notes = '',
+      token: customToken,
+      password,
+      instagram = '',
+      phone = '',
+      accountDetails = '',
+      dateOfBirth = '',
+      joiningDate = '',
+      experienceYears = '',
+      companyCode = '',
+    } = req.body;
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Designer name and email are required.' });
@@ -244,6 +259,13 @@ router.post('/', requireAdmin, async (req, res) => {
       email: email.trim().toLowerCase(),
       specialty: specialty.trim(),
       avatar: avatar.trim(),
+      instagram: String(instagram || '').trim(),
+      phone: String(phone || '').trim(),
+      accountDetails: String(accountDetails || '').trim(),
+      dateOfBirth: String(dateOfBirth || '').trim(),
+      joiningDate: String(joiningDate || '').trim(),
+      experienceYears: String(experienceYears || '').trim(),
+      companyCode: String(companyCode || '').trim(),
       token,
       status: 'active',
       notes: notes.trim(),
@@ -283,7 +305,23 @@ router.post('/', requireAdmin, async (req, res) => {
 // ==========================================
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
-    const { name, email, specialty, avatar, status, notes, token, password } = req.body;
+    const {
+      name,
+      email,
+      specialty,
+      avatar,
+      status,
+      notes,
+      token,
+      password,
+      instagram,
+      phone,
+      accountDetails,
+      dateOfBirth,
+      joiningDate,
+      experienceYears,
+      companyCode,
+    } = req.body;
     const effectiveToken = (token || password)?.trim();
 
     if (isMongoConnected()) {
@@ -297,6 +335,13 @@ router.put('/:id', requireAdmin, async (req, res) => {
           if (status !== undefined) designer.status = status;
           if (notes !== undefined) designer.notes = notes.trim();
           if (effectiveToken) designer.token = effectiveToken;
+          if (instagram !== undefined) designer.instagram = String(instagram).trim();
+          if (phone !== undefined) designer.phone = String(phone).trim();
+          if (accountDetails !== undefined) designer.accountDetails = String(accountDetails).trim();
+          if (dateOfBirth !== undefined) designer.dateOfBirth = String(dateOfBirth).trim();
+          if (joiningDate !== undefined) designer.joiningDate = String(joiningDate).trim();
+          if (experienceYears !== undefined) designer.experienceYears = String(experienceYears).trim();
+          if (companyCode !== undefined) designer.companyCode = String(companyCode).trim();
           await designer.save();
           return res.json(designer);
         }
@@ -319,6 +364,13 @@ router.put('/:id', requireAdmin, async (req, res) => {
           ...(status !== undefined && { status }),
           ...(notes !== undefined && { notes: notes.trim() }),
           ...(effectiveToken && { token: effectiveToken }),
+          ...(instagram !== undefined && { instagram: String(instagram).trim() }),
+          ...(phone !== undefined && { phone: String(phone).trim() }),
+          ...(accountDetails !== undefined && { accountDetails: String(accountDetails).trim() }),
+          ...(dateOfBirth !== undefined && { dateOfBirth: String(dateOfBirth).trim() }),
+          ...(joiningDate !== undefined && { joiningDate: String(joiningDate).trim() }),
+          ...(experienceYears !== undefined && { experienceYears: String(experienceYears).trim() }),
+          ...(companyCode !== undefined && { companyCode: String(companyCode).trim() }),
         };
         updatedDesigner = db.designers[idx];
       }

@@ -7,6 +7,13 @@ const DesignerSchema = new mongoose.Schema(
     email: { type: String, required: true, trim: true, lowercase: true },
     specialty: { type: String, default: 'Brand Designer' },
     avatar: { type: String, default: '' },
+    instagram: { type: String, default: '' },
+    phone: { type: String, default: '' },
+    accountDetails: { type: String, default: '' },
+    dateOfBirth: { type: String, default: '' },
+    joiningDate: { type: String, default: '' },
+    experienceYears: { type: String, default: '' },
+    companyCode: { type: String, default: '' },
     token: { type: String, required: true, unique: true, index: true },
     status: {
       type: String,

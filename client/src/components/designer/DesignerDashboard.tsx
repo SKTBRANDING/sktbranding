@@ -44,13 +44,13 @@ interface DesignerDashboardProps {
 }
 
 type TabType =
-  | 'pending'
-  | 'daily'
-  | 'my_works'
-  | 'revisions'
+  | 'assigned'
+  | 'in_progress'
   | 'submitted'
+  | 'revisions'
+  | 'completed'
   | 'available'
-  | 'completed';
+  | 'daily';
 
 export default function DesignerDashboard({
   designer,
@@ -60,7 +60,7 @@ export default function DesignerDashboard({
   onRefreshTasks,
 }: DesignerDashboardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [activeTab, setActiveTab] = useState<TabType>('pending');
+  const [activeTab, setActiveTab] = useState<TabType>('assigned');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   // Search & Date filter state
@@ -133,22 +133,40 @@ export default function DesignerDashboard({
     return { today, thisWeek, thisMonth, total };
   }, [myAssignedTasks, todayStr, sevenDaysAgo, startOfMonth]);
 
-  // Tasks categorized
+  // Tasks categorized strictly by workflow lifecycle
   const availableTasks = useMemo(() => tasks.filter((t) => t.status === 'available'), [tasks]);
 
-  const pendingTasks = useMemo(
-    () =>
-      myAssignedTasks.filter(
-        (t) =>
-          t.status === 'assigned' ||
-          t.status === 'in_progress' ||
-          t.status === 'revision_requested' ||
-          t.status === 'submitted' ||
-          t.status === 'resubmitted'
-      ),
+  // 1. Assigned Works (Ready to start)
+  const assignedTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'assigned'),
     [myAssignedTasks]
   );
 
+  // 2. Starting / In-Progress Works (Actively designing)
+  const startingTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'in_progress'),
+    [myAssignedTasks]
+  );
+
+  // 3. Submitted Works (Delivered for review)
+  const submittedTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'submitted' || t.status === 'resubmitted'),
+    [myAssignedTasks]
+  );
+
+  // 4. Revision Requests (Action needed)
+  const revisionTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'revision_requested'),
+    [myAssignedTasks]
+  );
+
+  // 5. Completed Works (Approved)
+  const completedTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'completed'),
+    [myAssignedTasks]
+  );
+
+  // Daily assigned for reference
   const dailyAssignedTasks = useMemo(() => {
     const targetDate = dateSearch || todayStr;
     return myAssignedTasks.filter((t) => {
@@ -157,47 +175,27 @@ export default function DesignerDashboard({
     });
   }, [myAssignedTasks, dateSearch, todayStr]);
 
-  const myActiveTasks = useMemo(
-    () => myAssignedTasks.filter((t) => t.status === 'assigned' || t.status === 'in_progress'),
-    [myAssignedTasks]
-  );
-
-  const revisionTasks = useMemo(
-    () => myAssignedTasks.filter((t) => t.status === 'revision_requested'),
-    [myAssignedTasks]
-  );
-
-  const submittedTasks = useMemo(
-    () => myAssignedTasks.filter((t) => t.status === 'submitted' || t.status === 'resubmitted'),
-    [myAssignedTasks]
-  );
-
-  const completedTasks = useMemo(
-    () => myAssignedTasks.filter((t) => t.status === 'completed'),
-    [myAssignedTasks]
-  );
-
   // Filter tasks based on activeTab, dateSearch, and textSearch
   const displayedTasks = useMemo(() => {
     let list: Task[] = [];
-    if (activeTab === 'pending') {
-      list = pendingTasks;
-    } else if (activeTab === 'daily') {
-      list = dailyAssignedTasks;
-    } else if (activeTab === 'my_works') {
-      list = myActiveTasks;
-    } else if (activeTab === 'revisions') {
-      list = revisionTasks;
+    if (activeTab === 'assigned') {
+      list = assignedTasks;
+    } else if (activeTab === 'in_progress') {
+      list = startingTasks;
     } else if (activeTab === 'submitted') {
       list = submittedTasks;
+    } else if (activeTab === 'revisions') {
+      list = revisionTasks;
+    } else if (activeTab === 'daily') {
+      list = dailyAssignedTasks;
     } else if (activeTab === 'available') {
       list = availableTasks;
     } else {
       list = completedTasks;
     }
 
-    // Apply dateSearch if active and not already daily tab
-    if (dateSearch && activeTab !== 'daily') {
+    // Apply dateSearch only when user explicitly selected a date
+    if (dateSearch && activeTab === 'daily') {
       list = list.filter((t) => {
         const assignedDate = t.assignedAt ? t.assignedAt.slice(0, 10) : t.createdAt?.slice(0, 10);
         const deadlineDate = t.deadline ? t.deadline.slice(0, 10) : '';
@@ -224,11 +222,11 @@ export default function DesignerDashboard({
     return list;
   }, [
     activeTab,
-    pendingTasks,
-    dailyAssignedTasks,
-    myActiveTasks,
-    revisionTasks,
+    assignedTasks,
+    startingTasks,
     submittedTasks,
+    revisionTasks,
+    dailyAssignedTasks,
     availableTasks,
     completedTasks,
     dateSearch,
@@ -255,9 +253,22 @@ export default function DesignerDashboard({
         throw new Error(data.error || 'Failed to claim task');
       }
 
-      showToast(`Work claimed! "${task.title}" has been moved to your pending tasks.`);
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === task.id
+            ? {
+                ...t,
+                status: 'assigned',
+                assignedDesignerId: designer.id,
+                assignedDesignerName: designer.name,
+                assignedAt: new Date().toISOString(),
+              }
+            : t
+        )
+      );
+      showToast(`Work claimed! "${task.title}" has been moved to Assigned Works.`);
+      setActiveTab('assigned');
       await onRefreshTasks();
-      setActiveTab('pending');
     } catch (err: any) {
       showToast(err.message, 'error');
       await onRefreshTasks();
@@ -268,6 +279,17 @@ export default function DesignerDashboard({
 
   const handleStartWork = async (task: Task) => {
     try {
+      // 1. Immediate optimistic UI update: move task to Starting / In-Progress works
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, status: 'in_progress' } : t))
+      );
+      if (selectedTask?.id === task.id) {
+        setSelectedTask((prev) => (prev ? { ...prev, status: 'in_progress' } : null));
+      }
+      // 2. Automatically navigate to the Starting Works panel
+      setActiveTab('in_progress');
+      showToast(`Work started on "${task.title}". Moved to Starting Works!`);
+
       const token =
         designer.token ||
         (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') ||
@@ -282,10 +304,10 @@ export default function DesignerDashboard({
       });
       if (!res.ok) throw new Error('Failed to update status');
 
-      showToast(`Work started on "${task.title}".`);
       await onRefreshTasks();
     } catch (err: any) {
       showToast(err.message, 'error');
+      await onRefreshTasks();
     }
   };
 
@@ -394,10 +416,47 @@ export default function DesignerDashboard({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || 'Failed to submit deliverables');
 
-      showToast(json.message || 'Deliverables submitted for review!');
-      setSubmitModalOpen(false);
-      await onRefreshTasks();
+      // 1. Optimistic update: move work from Starting Works to Submitted review panel
+      const nextStatus = (selectedTask.submissions?.length || 0) > 0 ? 'resubmitted' : 'submitted';
+      const newSub: TaskSubmission = json.submission || {
+        id: `sub-${Date.now()}`,
+        version: (selectedTask.submissions?.length || 0) + 1,
+        versionLabel: 'Deliverables Submission',
+        submittedAt: new Date().toISOString(),
+        designerId: designer.id,
+        designerName: designer.name,
+        notes: submissionNotes,
+        files: uploadedFiles,
+        designerVoiceNote: submissionVoiceNote,
+        reviewStatus: 'pending',
+      };
+
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === selectedTask.id
+            ? {
+                ...t,
+                status: nextStatus,
+                submissions: [newSub, ...(t.submissions || [])],
+              }
+            : t
+        )
+      );
+
+      // 2. Clear date/search filters so the submitted work is immediately visible
+      setDateSearch('');
+      setTextSearch('');
+
+      // 3. Automatically switch to Submitted review panel
       setActiveTab('submitted');
+      setSubmitModalOpen(false);
+      setSelectedTask(null);
+      setSubmissionNotes('');
+      setUploadedFiles([]);
+      setSubmissionVoiceNote(null);
+
+      showToast(json.message || 'Deliverables submitted! Moved to Submitted review panel.');
+      await onRefreshTasks();
     } catch (err: any) {
       showToast(err.message, 'error');
     } finally {
@@ -437,7 +496,14 @@ export default function DesignerDashboard({
               </div>
             )}
             <div className="text-left hidden sm:block">
-              <span className="text-xs font-bold text-white block leading-tight">{designer.name}</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-bold text-white block leading-tight">{designer.name}</span>
+                {designer.companyCode && (
+                  <span className="px-1.5 py-0.2 text-[9px] font-mono font-bold bg-[#FF4D00]/15 text-[#FF4D00] border border-[#FF4D00]/30 rounded">
+                    {designer.companyCode}
+                  </span>
+                )}
+              </div>
               <span className="text-[9px] text-[#A3A3A3] block uppercase tracking-wider">
                 {designer.specialty}
               </span>
@@ -665,49 +731,70 @@ export default function DesignerDashboard({
 
         {/* Tab Navigation Bars */}
         <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
-          {/* 1. Pending Works Tab */}
+          {/* 1. Assigned Works Tab (To Start) */}
           <button
             type="button"
-            onClick={() => setActiveTab('pending')}
+            onClick={() => setActiveTab('assigned')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'pending'
+              activeTab === 'assigned'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
             <Clock className="w-3.5 h-3.5" />
-            <span>Pending Works</span>
+            <span>Assigned Works</span>
             <span
               className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                activeTab === 'pending' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+                activeTab === 'assigned' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
               }`}
             >
-              {pendingTasks.length}
+              {assignedTasks.length}
             </span>
           </button>
 
-          {/* 2. Daily Assigned Tab */}
+          {/* 2. Starting Works Tab (In Progress) */}
           <button
             type="button"
-            onClick={() => setActiveTab('daily')}
+            onClick={() => setActiveTab('in_progress')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'daily'
+              activeTab === 'in_progress'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>Daily Assigned</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span>Starting Works</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                activeTab === 'daily' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'in_progress' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
               }`}
             >
-              {dailyAssignedTasks.length}
+              {startingTasks.length}
             </span>
           </button>
 
-          {/* 3. Revisions Requested */}
+          {/* 3. Submitted (Awaiting Review) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('submitted')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'submitted'
+                ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
+                : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
+            }`}
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Submitted (Review)</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'submitted' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
+              {submittedTasks.length}
+            </span>
+          </button>
+
+          {/* 4. Revisions Requested */}
           <button
             type="button"
             onClick={() => setActiveTab('revisions')}
@@ -726,45 +813,24 @@ export default function DesignerDashboard({
             )}
           </button>
 
-          {/* 4. Active Works */}
+          {/* 5. Daily Assigned Tab */}
           <button
             type="button"
-            onClick={() => setActiveTab('my_works')}
+            onClick={() => setActiveTab('daily')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'my_works'
+              activeTab === 'daily'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Active Works</span>
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Daily Assigned</span>
             <span
-              className={`px-2 py-0.5 rounded-full text-[10px] ${
-                activeTab === 'my_works' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                activeTab === 'daily' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
               }`}
             >
-              {myActiveTasks.length}
-            </span>
-          </button>
-
-          {/* 5. Submitted (Awaiting Review) */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('submitted')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'submitted'
-                ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
-                : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
-            }`}
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>Submitted (Review)</span>
-            <span
-              className={`px-2 py-0.5 rounded-full text-[10px] ${
-                activeTab === 'submitted' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
-              }`}
-            >
-              {submittedTasks.length}
+              {dailyAssignedTasks.length}
             </span>
           </button>
 
@@ -817,23 +883,20 @@ export default function DesignerDashboard({
             <Briefcase className="w-10 h-10 text-[#737373] mx-auto opacity-50" />
             <p className="text-sm font-bold text-white">No tasks found in this view</p>
             <p className="text-xs text-[#A3A3A3] max-w-sm mx-auto">
-              {dateSearch
-                ? `No assignments or submissions matching date "${dateSearch}". Try clearing the date search or selecting another date.`
-                : activeTab === 'pending'
-                ? 'You have zero pending tasks! Great job staying ahead of your design queue.'
+              {activeTab === 'assigned'
+                ? 'No new assigned tasks waiting to start. Check "Available Briefs" or wait for new assignments.'
+                : activeTab === 'in_progress'
+                ? 'No works currently in starting works panel. Click "Start Working" on an assigned task to begin.'
+                : activeTab === 'submitted'
+                ? 'No deliverables currently under review. Submit your work package from Starting Works to see it here.'
+                : activeTab === 'revisions'
+                ? 'No revision requests pending. All submitted works are in order!'
                 : activeTab === 'daily'
-                ? `No works assigned on ${dateSearch || 'today'}. Check "Available Briefs" or browse all dates.`
+                ? 'No tasks assigned for this date.'
+                : activeTab === 'available'
+                ? 'No unassigned briefs in the studio pool right now.'
                 : 'No tasks currently in this section.'}
             </p>
-            {dateSearch && (
-              <button
-                type="button"
-                onClick={() => setDateSearch('')}
-                className="px-4 py-2 rounded-full text-xs font-bold bg-[#FF4D00] text-black hover:bg-[#FF7A00] transition-colors"
-              >
-                Clear Date Filter
-              </button>
-            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -1002,14 +1065,15 @@ export default function DesignerDashboard({
                         <button
                           type="button"
                           onClick={() => handleStartWork(task)}
-                          className="px-4 py-2 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+                          className="px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex items-center gap-1.5"
                         >
-                          Start Working
+                          <ArrowRight className="w-3.5 h-3.5" />
+                          <span>Start Working</span>
                         </button>
                         <button
                           type="button"
                           onClick={() => openSubmissionModal(task)}
-                          className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex items-center gap-1.5"
+                          className="px-4 py-2 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center gap-1.5"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Submit Work</span>
@@ -1072,8 +1136,29 @@ export default function DesignerDashboard({
                   >
                     Take Work
                   </button>
+                ) : selectedTask.status === 'assigned' ? (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        handleStartWork(selectedTask);
+                        setSelectedTask(null);
+                      }}
+                      className="px-5 py-2 rounded-full text-xs font-bold uppercase bg-[#FF4D00] text-black hover:bg-[#FF7A00] transition-colors flex items-center gap-1.5"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5" />
+                      <span>Start Working</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openSubmissionModal(selectedTask)}
+                      className="px-4 py-2 rounded-full text-xs font-semibold bg-white/10 text-white hover:bg-white/20 transition-colors flex items-center gap-1.5"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Submit Work</span>
+                    </button>
+                  </div>
                 ) : selectedTask.status === 'in_progress' ||
-                  selectedTask.status === 'assigned' ||
                   selectedTask.status === 'revision_requested' ? (
                   <button
                     type="button"

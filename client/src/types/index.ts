@@ -171,6 +171,13 @@ export interface Designer {
   createdAt: string;
   lastActiveAt?: string;
   notes?: string;
+  instagram?: string;
+  phone?: string;
+  accountDetails?: string;
+  dateOfBirth?: string;
+  joiningDate?: string;
+  experienceYears?: string;
+  companyCode?: string;
 }
 
 export interface TaskAttachment {

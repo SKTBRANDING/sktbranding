@@ -686,6 +686,54 @@
   ],
   "invoices": [
     {
+      "id": "inv-1795703202493-dc927f72",
+      "invoiceNumber": "SKT-INV-2026-002",
+      "clientId": "",
+      "clientName": "BAITHULRASA",
+      "clientEmail": "sktdesigns50@gmail.com",
+      "clientPhone": "+919544931226",
+      "clientCompany": "SKT _ DESIGNS",
+      "clientAddress": "Chattukapaara",
+      "projectId": "proj-4",
+      "projectName": "SOCIAL MEDIA POSTERS",
+      "issueDate": "2026-11-26",
+      "dueDate": "2026-12-10",
+      "items": [
+        {
+          "id": "item-1795703092654",
+          "description": "POSTER DESIGN",
+          "category": "Social Media",
+          "quantity": 30,
+          "rate": 300,
+          "amount": 9000
+        },
+        {
+          "id": "item-1795703169124",
+          "description": "Deliverables & Creative Direction",
+          "category": "Branding",
+          "quantity": 30,
+          "rate": 300,
+          "amount": 9000
+        }
+      ],
+      "subtotal": 18000,
+      "taxRate": 0,
+      "taxAmount": 0,
+      "discountRate": 0,
+      "discountAmount": 0,
+      "total": 18000,
+      "amountPaid": 0,
+      "balanceDue": 18000,
+      "status": "pending",
+      "currency": "INR",
+      "paymentMethod": "bank_transfer",
+      "paymentDetails": "SKT BRANDING AGENCY • Wire / IBAN / Swift Transfer Details",
+      "notes": "Thank you for partnering with SKT Branding. Payment is due within 14 days of invoice date.",
+      "paidAt": null,
+      "createdAt": "2026-11-26T14:26:42.494Z",
+      "updatedAt": "2026-11-26T14:26:42.494Z"
+    },
+    {
       "id": "inv-1",
       "invoiceNumber": "SKT-INV-2026-001",
       "clientId": "client-bth",
