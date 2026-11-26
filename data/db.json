@@ -681,5 +681,50 @@
       "createdAt": "2026-10-15T09:00:00.000Z",
       "updatedAt": "2026-10-25T14:30:00.000Z"
     }
+  ],
+  "clients": [
+    {
+      "id": "client-baithulrasa",
+      "name": "BAITHULRASA",
+      "company": "Baithulrasa Hospitality & Estate",
+      "phone": "+91 9544931226",
+      "email": "accounts@baithulrasa.com",
+      "address": "Level 42, Al Saada Tower, Downtown Dubai, UAE",
+      "notes": "Premium luxury hospitality & lifestyle client",
+      "serviceRates": [
+        {
+          "serviceName": "Poster Design",
+          "rate": 300,
+          "category": "Poster Design"
+        },
+        {
+          "serviceName": "Video / Motion Graphics",
+          "rate": 500,
+          "category": "Video"
+        },
+        {
+          "serviceName": "Social Media Post & Creatives",
+          "rate": 300,
+          "category": "Social Media"
+        },
+        {
+          "serviceName": "Logo Design & Monogram",
+          "rate": 1500,
+          "category": "Logo Design"
+        },
+        {
+          "serviceName": "Brand Identity & Guidelines",
+          "rate": 3500,
+          "category": "Branding"
+        },
+        {
+          "serviceName": "Packaging & Label Design",
+          "rate": 2000,
+          "category": "Packaging"
+        }
+      ],
+      "createdAt": "2026-11-26T18:28:43.900Z",
+      "updatedAt": "2026-11-26T18:28:43.901Z"
+    }
   ]
 }

@@ -73,7 +73,7 @@ function AdminPage() {
         }
 
         // Fetch current studio dataset
-        const [projects, services, content, settings, testimonials, inquiries, tasks, designers, invoices] =
+        const [projects, services, content, settings, testimonials, inquiries, tasks, designers, invoices, clients] =
           await Promise.all([
             fetch('/api/projects?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
             fetch('/api/services?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
@@ -84,6 +84,7 @@ function AdminPage() {
             fetch('/api/tasks', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
             fetch('/api/designers', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
             fetch('/api/invoices', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            fetch('/api/clients', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
           ]);
 
         if (isMounted) {
@@ -97,6 +98,7 @@ function AdminPage() {
             tasks: Array.isArray(tasks) ? tasks : prev.tasks || [],
             designers: Array.isArray(designers) ? designers : prev.designers || [],
             invoices: Array.isArray(invoices) ? invoices : prev.invoices || [],
+            clients: Array.isArray(clients) ? clients : prev.clients || [],
           }));
         }
       } catch (err) {

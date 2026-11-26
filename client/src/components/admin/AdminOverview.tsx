@@ -29,6 +29,7 @@ interface AdminOverviewProps {
   onOpenTestimonialModal: () => void;
   onSelectInquiry: (inquiry: Inquiry) => void;
   onOpenTaskModal?: () => void;
+  onOpenClientModal?: () => void;
 }
 
 export default function AdminOverview({
@@ -39,6 +40,7 @@ export default function AdminOverview({
   onOpenTestimonialModal,
   onSelectInquiry,
   onOpenTaskModal,
+  onOpenClientModal,
 }: AdminOverviewProps) {
   const projects = Array.isArray(data?.projects) ? data.projects : [];
   const services = Array.isArray(data?.services) ? data.services : [];
@@ -344,6 +346,23 @@ export default function AdminOverview({
                   </div>
                 </div>
                 <ArrowUpRight className="w-4 h-4 text-[#737373] group-hover:text-emerald-400 transition-colors" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => (onOpenClientModal ? onOpenClientModal() : onNavigateTab('clients'))}
+                className="flex items-center justify-between p-3.5 rounded-xl bg-[#0a0a0a] hover:bg-[#1a1a1a] border border-white/10 text-xs font-semibold text-white transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center font-bold">
+                    <Building className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <span className="block text-white font-bold">Add New Client & Service Rates</span>
+                    <span className="block text-[10px] text-[#A3A3A3] font-normal">Configure client info & rates (e.g. Poster ₹300, Video ₹500)</span>
+                  </div>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-[#737373] group-hover:text-blue-400 transition-colors" />
               </button>
 
               <button

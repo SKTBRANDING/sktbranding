@@ -22,8 +22,9 @@ import {
   Users,
   Receipt,
   Sliders,
+  Building,
 } from 'lucide-react';
-import { DatabaseSchema, Inquiry } from '@/types';
+import { DatabaseSchema, Inquiry, Client } from '@/types';
 import { clearAdminToken, adminFetch } from '@/lib/adminApi';
 import AdminOverview from './AdminOverview';
 import AdminProjects from './AdminProjects';
@@ -36,6 +37,8 @@ import AdminTasks from './AdminTasks';
 import AdminDesigners from './AdminDesigners';
 import AdminBilling from './AdminBilling';
 import AdminLogos from './AdminLogos';
+import AdminClients from './AdminClients';
+import AdminClientModal from './AdminClientModal';
 
 interface AdminDashboardProps {
   initialData: DatabaseSchema;
@@ -54,6 +57,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
     tasks: Array.isArray(initialData?.tasks) ? initialData.tasks : [],
     designers: Array.isArray(initialData?.designers) ? initialData.designers : [],
     invoices: Array.isArray(initialData?.invoices) ? initialData.invoices : [],
+    clients: Array.isArray(initialData?.clients) ? initialData.clients : [],
   }));
 
   React.useEffect(() => {
@@ -70,6 +74,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         tasks: Array.isArray(initialData.tasks) ? initialData.tasks : prev.tasks,
         designers: Array.isArray(initialData.designers) ? initialData.designers : prev.designers,
         invoices: Array.isArray(initialData.invoices) ? initialData.invoices : prev.invoices,
+        clients: Array.isArray(initialData.clients) ? initialData.clients : prev.clients || [],
       }));
     }
   }, [initialData]);
@@ -91,6 +96,15 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
     setActiveTab('tasks');
   };
 
+  // Client Management Modal state
+  const [clientModalOpen, setClientModalOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
+
+  const handleOpenClientModal = (client?: Client) => {
+    setEditingClient(client || null);
+    setClientModalOpen(true);
+  };
+
   // Toast notification system
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
@@ -104,7 +118,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
   // Refresh entire database from server
   const refreshData = async () => {
     try {
-      const [projRes, servRes, contRes, testRes, inqRes, settRes, taskRes, desRes, invRes] = await Promise.all([
+      const [projRes, servRes, contRes, testRes, inqRes, settRes, taskRes, desRes, invRes, cliRes] = await Promise.all([
         adminFetch('/api/projects?all=true'),
         adminFetch('/api/services?all=true'),
         adminFetch('/api/content'),
@@ -114,6 +128,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         adminFetch('/api/tasks'),
         adminFetch('/api/designers'),
         adminFetch('/api/invoices'),
+        adminFetch('/api/clients'),
       ]);
 
       const safeJson = async (res: Response) => {
@@ -124,7 +139,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         }
       };
 
-      const [projects, services, content, testimonials, inquiries, settings, tasks, designers, invoices] = await Promise.all([
+      const [projects, services, content, testimonials, inquiries, settings, tasks, designers, invoices, clients] = await Promise.all([
         safeJson(projRes),
         safeJson(servRes),
         safeJson(contRes),
@@ -134,6 +149,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         safeJson(taskRes),
         safeJson(desRes),
         safeJson(invRes),
+        safeJson(cliRes),
       ]);
 
       setData((prev) => ({
@@ -146,6 +162,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         tasks: Array.isArray(tasks) ? tasks : prev.tasks || [],
         designers: Array.isArray(designers) ? designers : prev.designers || [],
         invoices: Array.isArray(invoices) ? invoices : prev.invoices || [],
+        clients: Array.isArray(clients) ? clients : prev.clients || [],
       }));
     } catch (err) {
       console.error('Error refreshing admin data:', err);
@@ -175,6 +192,12 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
       icon: Receipt,
       count: (data.invoices || []).length,
       badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} Due` : undefined,
+    },
+    {
+      id: 'clients',
+      label: 'Clients & Rates',
+      icon: Building,
+      count: (data.clients || []).length,
     },
     {
       id: 'tasks',
@@ -406,6 +429,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
               onOpenServiceModal={() => setActiveTab('services')}
               onOpenTestimonialModal={() => setActiveTab('testimonials')}
               onOpenTaskModal={() => handleOpenUploadAndAssignTask()}
+              onOpenClientModal={() => handleOpenClientModal()}
               onSelectInquiry={(inq) => {
                 setSelectedInquiry(inq);
                 setActiveTab('inquiries');
@@ -417,6 +441,8 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
             <AdminTasks
               tasks={data.tasks || []}
               designers={data.designers || []}
+              clients={data.clients || []}
+              onOpenClientModal={() => handleOpenClientModal()}
               onRefresh={refreshData}
               showToast={showToast}
               onPublishToPortfolio={(task) => {
@@ -428,6 +454,19 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
               onResetModalTrigger={() => {
                 setForceOpenTaskModal(false);
                 setTaskModalPreselectedDesignerId(null);
+              }}
+            />
+          )}
+
+          {activeTab === 'clients' && (
+            <AdminClients
+              clients={data.clients || []}
+              onRefresh={refreshData}
+              showToast={showToast}
+              onOpenCreateClient={() => handleOpenClientModal()}
+              onEditClient={(client) => handleOpenClientModal(client)}
+              onAssignWorkForClient={(client) => {
+                handleOpenUploadAndAssignTask();
               }}
             />
           )}
@@ -511,6 +550,18 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
               showToast={showToast}
             />
           )}
+
+          {/* Client Profile & Service Rates Modal */}
+          <AdminClientModal
+            isOpen={clientModalOpen}
+            onClose={() => {
+              setClientModalOpen(false);
+              setEditingClient(null);
+            }}
+            onRefresh={refreshData}
+            showToast={showToast}
+            editingClient={editingClient}
+          />
         </main>
 
       </div>

@@ -249,6 +249,26 @@ export interface Task {
   updatedAt: string;
 }
 
+export interface ClientServiceRate {
+  id?: string;
+  serviceName: string; // e.g. "Poster Design", "Video / Motion Graphics"
+  rate: number;        // e.g. 300, 500
+  category?: string;   // e.g. "Poster", "Video", "Social Media"
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  company?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  notes?: string;
+  serviceRates: ClientServiceRate[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface DatabaseSchema {
   projects: Project[];
   services: ServiceItem[];
@@ -259,6 +279,7 @@ export interface DatabaseSchema {
   designers: Designer[];
   tasks: Task[];
   invoices?: Invoice[];
+  clients?: Client[];
 }
 
 export type InvoiceStatus = 'draft' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';

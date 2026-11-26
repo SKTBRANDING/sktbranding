@@ -32,7 +32,7 @@ import {
   Building,
   Tag,
 } from 'lucide-react';
-import { Task, Designer, TaskAttachment, TaskPriority, TaskStatus } from '@/types';
+import { Task, Designer, TaskAttachment, TaskPriority, TaskStatus, Client } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
 import FileAttachmentCard from '@/components/ui/FileAttachmentCard';
 import RevisionTimeline from '@/components/ui/RevisionTimeline';
@@ -55,6 +55,8 @@ const STUDIO_SERVICES = [
 interface AdminTasksProps {
   tasks: Task[];
   designers: Designer[];
+  clients?: Client[];
+  onOpenClientModal?: () => void;
   onRefresh: () => Promise<void>;
   showToast: (msg: string, type?: 'success' | 'error') => void;
   onPublishToPortfolio?: (task: Task) => void;
@@ -66,6 +68,8 @@ interface AdminTasksProps {
 export default function AdminTasks({
   tasks,
   designers,
+  clients = [],
+  onOpenClientModal,
   onRefresh,
   showToast,
   onPublishToPortfolio,
@@ -137,6 +141,35 @@ export default function AdminTasks({
 
   const [savingTask, setSavingTask] = useState(false);
   const [uploadingRef, setUploadingRef] = useState(false);
+
+  // Active client object if loaded
+  const currentClient = useMemo(() => {
+    if (!formData.client || !clients) return null;
+    return clients.find((c) => c.name.toLowerCase() === formData.client.trim().toLowerCase());
+  }, [formData.client, clients]);
+
+  // Combined services list: standard studio services + any specific services & rates from the selected client
+  const availableServices = useMemo(() => {
+    const list = [...STUDIO_SERVICES];
+    if (currentClient && currentClient.serviceRates) {
+      currentClient.serviceRates.forEach((sr) => {
+        const existingIdx = list.findIndex((s) => s.name.toLowerCase() === sr.serviceName.toLowerCase());
+        if (existingIdx !== -1) {
+          list[existingIdx] = {
+            ...list[existingIdx],
+            defaultRate: sr.rate,
+          };
+        } else {
+          list.push({
+            name: sr.serviceName,
+            defaultRate: sr.rate,
+            category: sr.category || 'Custom',
+          });
+        }
+      });
+    }
+    return list;
+  }, [currentClient]);
 
   // Trigger open modal if requested via prop
   useEffect(() => {
@@ -1225,14 +1258,21 @@ export default function AdminTasks({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#FF4D00] flex items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5" />
-                    <span>Service Offering / Category *</span>
+                  <label className="block text-xs uppercase font-semibold text-[#FF4D00] flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="w-3.5 h-3.5" />
+                      <span>Service Offering / Category *</span>
+                    </span>
+                    {currentClient && (
+                      <span className="text-[10px] text-emerald-400 font-mono font-bold lowercase">
+                        (Client custom rates applied)
+                      </span>
+                    )}
                   </label>
                   <select
                     value={formData.serviceCategory}
                     onChange={(e) => {
-                      const selected = STUDIO_SERVICES.find((s) => s.name === e.target.value);
+                      const selected = availableServices.find((s) => s.name === e.target.value);
                       setFormData({
                         ...formData,
                         serviceCategory: e.target.value,
@@ -1241,9 +1281,9 @@ export default function AdminTasks({
                     }}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                   >
-                    {STUDIO_SERVICES.map((s) => (
+                    {availableServices.map((s) => (
                       <option key={s.name} value={s.name}>
-                        {s.name} (Std: ₹{s.defaultRate.toLocaleString()})
+                        {s.name} (₹{s.defaultRate.toLocaleString()} INR)
                       </option>
                     ))}
                   </select>
@@ -1259,6 +1299,56 @@ export default function AdminTasks({
                   </span>
                   <span className="text-[10px] text-[#A3A3A3]">Auto-populates on client invoice</span>
                 </div>
+
+                {/* Quick Select Client Profile Dropdown & Add New Client Button */}
+                {clients && clients.length > 0 && (
+                  <div className="p-2.5 rounded-xl bg-black/70 border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+                    <div className="flex items-center gap-2 flex-1">
+                      <span className="text-[10px] uppercase font-bold text-[#A3A3A3] whitespace-nowrap">
+                        Load Client:
+                      </span>
+                      <select
+                        onChange={(e) => {
+                          const cl = clients.find((c) => c.name === e.target.value || c.id === e.target.value);
+                          if (cl) {
+                            const matchedService = (cl.serviceRates || []).find(
+                              (s) => s.serviceName.toLowerCase() === formData.serviceCategory.toLowerCase()
+                            );
+                            setFormData((prev) => ({
+                              ...prev,
+                              client: cl.name,
+                              clientCompany: cl.company || '',
+                              clientPhone: cl.phone || '',
+                              clientEmail: cl.email || '',
+                              clientAddress: cl.address || '',
+                              rate: matchedService ? matchedService.rate : prev.rate,
+                            }));
+                          }
+                        }}
+                        className="flex-1 px-3 py-1.5 rounded-lg bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                        defaultValue=""
+                      >
+                        <option value="">-- Choose from saved client list --</option>
+                        {clients.map((c) => (
+                          <option key={c.id || c.name} value={c.name}>
+                            {c.name} {c.company ? `(${c.company})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {onOpenClientModal && (
+                      <button
+                        type="button"
+                        onClick={onOpenClientModal}
+                        className="px-3 py-1.5 rounded-lg bg-[#FF4D00]/15 hover:bg-[#FF4D00]/25 text-[#FF4D00] text-xs font-bold border border-[#FF4D00]/30 transition-colors flex items-center gap-1.5 self-start sm:self-auto flex-shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add New Client</span>
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
