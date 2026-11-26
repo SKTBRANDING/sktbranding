@@ -471,40 +471,28 @@
   },
   "designers": [
     {
+      "id": "des-d8c6af6a",
+      "name": "FATHIMA",
+      "email": "sktdesigns50@gmail.com",
+      "specialty": "Brand Identity & Typography",
+      "avatar": "",
+      "token": "FATHIMA 123",
+      "status": "active",
+      "notes": "",
+      "createdAt": "2026-11-26T14:07:47.440Z",
+      "lastActiveAt": "2026-11-26T14:07:47.440Z"
+    },
+    {
       "id": "des-1",
       "name": "FIDHA WAFIYYA",
       "email": "fida@gmail.com",
       "specialty": "graphic designer",
       "avatar": "",
-      "token": "dsg_aria_7f8e91a2bc4d",
+      "token": "FIDA 123",
       "status": "active",
       "createdAt": "2025-01-10T09:00:00.000Z",
       "lastActiveAt": "2026-11-17T03:34:24.432Z",
       "notes": "Specializes in Swiss minimalism, typography systems, and modern luxury brand guidelines."
-    },
-    {
-      "id": "des-2",
-      "name": "Lucas Silva",
-      "email": "lucas.silva@designers.sktbranding.com",
-      "specialty": "3D Packaging & Industrial Design",
-      "avatar": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
-      "token": "dsg_lucas_4b2c19e3fe5a",
-      "status": "active",
-      "createdAt": "2025-01-15T11:00:00.000Z",
-      "lastActiveAt": "2026-11-16T17:41:02.894Z",
-      "notes": "Expert in Blender 3D photorealistic mockups, structural packaging dielines, and foil finishing."
-    },
-    {
-      "id": "des-3",
-      "name": "Elena Vane",
-      "email": "elena.vane@designers.sktbranding.com",
-      "specialty": "Social Media & Motion Graphics",
-      "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80",
-      "token": "dsg_elena_8c3d55f190ab",
-      "status": "active",
-      "createdAt": "2025-02-01T10:00:00.000Z",
-      "lastActiveAt": "2025-02-28T11:20:00.000Z",
-      "notes": "Creative lead for kinetic typography, animated campaign teasers, and high-conversion social assets."
     }
   ],
   "tasks": [

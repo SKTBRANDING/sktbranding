@@ -29,9 +29,11 @@ import {
   Send,
   X,
   BadgeCheck,
+  Globe,
 } from 'lucide-react';
 import { Invoice, InvoiceItem, InvoiceStatus, PaymentMethod, Project } from '@/types';
 import { adminFetch } from '@/lib/adminApi';
+import { formatDate } from '@/lib/dateUtils';
 
 interface AdminBillingProps {
   invoices: Invoice[];
@@ -808,13 +810,43 @@ export default function AdminBilling({
       {/* 1. EXECUTIVE INVOICE PREVIEW & PRINT MODAL */}
       {/* ===================================================== */}
       {previewModalOpen && selectedInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
-          <div className="w-full max-w-3xl bg-[#0D0D0D] border border-white/15 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8 my-8 relative print:border-none print:shadow-none print:p-0 print:my-0 print:bg-white print:text-black">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200 overflow-y-auto">
+          {/* Print Style Overrides to keep Red & Black Gradient theme and eliminate white space */}
+          <style>{`
+            @media print {
+              @page {
+                margin: 0;
+                size: auto;
+              }
+              body {
+                background: #080404 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+              .print-hide {
+                display: none !important;
+              }
+              .print-invoice-sheet {
+                border: none !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+              }
+            }
+          `}</style>
+
+          <div className="w-full max-w-4xl my-6 relative print:m-0 print:p-0 print:w-full print:max-w-none">
             {/* Top Toolbar (Hidden during print) */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 print:hidden">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between bg-[#120a0a] border border-red-950/60 rounded-2xl px-5 py-3.5 mb-4 shadow-xl print-hide">
+              <div className="flex items-center gap-3">
                 <span className="text-xs font-mono font-bold text-[#FF4D00] uppercase tracking-wider">
-                  Executive Client Invoice View
+                  SKT Luxury Invoice Studio
                 </span>
                 {getStatusBadge(selectedInvoice.status)}
               </div>
@@ -827,7 +859,7 @@ export default function AdminBilling({
                       setPreviewModalOpen(false);
                       handleOpenPaymentModal(selectedInvoice);
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold border border-emerald-500/40 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 text-xs font-bold border border-emerald-500/40 transition-colors"
                   >
                     <CreditCard className="w-3.5 h-3.5" />
                     <span>Record Payment</span>
@@ -853,194 +885,291 @@ export default function AdminBilling({
               </div>
             </div>
 
-            {/* Print Header & Brand Watermark */}
-            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/10 pb-8">
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-black border border-[#FF4D00]/50 flex items-center justify-center shadow-[0_0_15px_rgba(255,77,0,0.3)]">
-                    <span className="text-[#FF4D00] font-black text-lg">S</span>
-                  </div>
-                  <div>
-                    <h1 className="text-lg font-black tracking-wider text-white print:text-black">
-                      SKT BRANDING
-                    </h1>
-                    <span className="text-[10px] text-[#FF4D00] block tracking-widest uppercase font-mono">
-                      Executive Brand Architecture Studio
-                    </span>
-                  </div>
-                </div>
+            {/* INVOICE CANVAS (RED & BLACK GRADIENT - ZERO WHITE SPACE) */}
+            <div className="print-invoice-sheet bg-[#090505] text-white rounded-[32px] overflow-hidden border border-red-950/60 shadow-[0_0_50px_rgba(255,42,0,0.18)] relative">
+              
+              {/* TOP HEADER: CRIMSON RED TO VELVET BLACK GRADIENT BANNER */}
+              <div className="relative p-7 sm:p-10 bg-gradient-to-br from-[#150202] via-[#4d0703] to-[#FF2A00] text-white overflow-hidden">
+                {/* Ambient dark vignette & glossy red highlight */}
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/10 via-transparent to-black/60 pointer-events-none"
+                />
 
-                <div className="text-[11px] text-[#737373] print:text-neutral-600 space-y-0.5 pt-1">
-                  <p>Private Atelier • Downtown Dubai • Berlin Holzmarkt</p>
-                  <p>Inquiries: contact@sktbranding.com • billing@sktbranding.com</p>
-                  <p>Web: www.sktbranding.com</p>
-                </div>
-              </div>
-
-              {/* Invoice Meta */}
-              <div className="text-left sm:text-right space-y-1 font-mono">
-                <span className="text-2xl font-black text-white print:text-black block">INVOICE</span>
-                <span className="text-sm font-bold text-[#FF4D00] block">{selectedInvoice.invoiceNumber}</span>
-                <div className="text-xs text-[#A3A3A3] print:text-neutral-600 pt-1 space-y-0.5">
-                  <p>Issue Date: <strong className="text-white print:text-black">{selectedInvoice.issueDate}</strong></p>
-                  <p>Payment Due: <strong className="text-white print:text-black">{selectedInvoice.dueDate}</strong></p>
-                  {selectedInvoice.paidAt && (
-                    <p className="text-emerald-400">
-                      Paid On: {new Date(selectedInvoice.paidAt).toLocaleDateString()}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Billed To / Client Work Context */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-[#080808] print:bg-neutral-50 p-5 rounded-2xl border border-white/5 print:border-neutral-200">
-              <div className="space-y-1">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#FF4D00] font-bold block">
-                  BILLED TO CLIENT:
-                </span>
-                <h3 className="text-sm font-extrabold text-white print:text-black">{selectedInvoice.clientName}</h3>
-                {selectedInvoice.clientCompany && (
-                  <p className="text-xs text-[#A3A3A3] print:text-neutral-700">{selectedInvoice.clientCompany}</p>
-                )}
-                {selectedInvoice.clientEmail && (
-                  <p className="text-xs text-[#737373] print:text-neutral-600">{selectedInvoice.clientEmail}</p>
-                )}
-                {selectedInvoice.clientPhone && (
-                  <p className="text-xs text-[#737373] print:text-neutral-600">{selectedInvoice.clientPhone}</p>
-                )}
-                {selectedInvoice.clientAddress && (
-                  <p className="text-xs text-[#737373] print:text-neutral-600 whitespace-pre-line">
-                    {selectedInvoice.clientAddress}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-1 sm:text-right">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#FF4D00] font-bold block">
-                  PROJECT / WORK ASSIGNMENT:
-                </span>
-                <p className="text-sm font-bold text-white print:text-black">
-                  {selectedInvoice.projectName || 'Luxury Brand Deliverables'}
-                </p>
-                <p className="text-xs text-[#737373] print:text-neutral-600">
-                  Currency: <strong>{selectedInvoice.currency}</strong>
-                </p>
-                <p className="text-xs text-[#737373] print:text-neutral-600">
-                  Payment Method: <strong className="capitalize">{selectedInvoice.paymentMethod?.replace('_', ' ') || 'Bank Wire'}</strong>
-                </p>
-              </div>
-            </div>
-
-            {/* Line Items Table */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-[#141414] print:bg-neutral-100 border-y border-white/10 print:border-neutral-300 text-[#A3A3A3] print:text-neutral-700 font-mono uppercase text-[10px]">
-                  <tr>
-                    <th className="py-3 px-4">#</th>
-                    <th className="py-3 px-4">Work Description & Deliverables</th>
-                    <th className="py-3 px-4 text-center">Category</th>
-                    <th className="py-3 px-4 text-center">Qty</th>
-                    <th className="py-3 px-4 text-right">Unit Rate</th>
-                    <th className="py-3 px-4 text-right">Amount</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.06] print:divide-neutral-200">
-                  {(selectedInvoice.items || []).map((item, idx) => (
-                    <tr key={item.id || idx}>
-                      <td className="py-3.5 px-4 font-mono text-[#737373]">{idx + 1}</td>
-                      <td className="py-3.5 px-4 font-semibold text-white print:text-black">
-                        {item.description}
-                      </td>
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="px-2 py-0.5 rounded text-[10px] bg-white/5 border border-white/10 font-mono text-[#A3A3A3] print:text-neutral-700">
-                          {item.category || 'Branding'}
+                <div className="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-8">
+                  {/* Left Column: SKT Branding Reference Logo + INVOICE Title + Number */}
+                  <div className="space-y-4 max-w-md">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src="/skt-brand-logo-white.png"
+                        alt="SKT BRANDING"
+                        className="h-9 sm:h-10 object-contain drop-shadow-[0_2px_12px_rgba(0,0,0,0.5)]"
+                      />
+                      <div className="border-l border-white/25 pl-3">
+                        <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-white font-extrabold block">
+                          DESIGN STUDIO
                         </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-center font-mono">{item.quantity}</td>
-                      <td className="py-3.5 px-4 text-right font-mono text-[#A3A3A3] print:text-neutral-700">
-                        {formatCurrency(item.rate, selectedInvoice.currency)}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono font-bold text-white print:text-black">
-                        {formatCurrency(item.amount, selectedInvoice.currency)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                        <span className="text-[9px] text-white/70 tracking-wider block font-sans">
+                          EXECUTIVE ATELIER
+                        </span>
+                      </div>
+                    </div>
 
-            {/* Financial Summary */}
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 border-t border-white/10 pt-6">
-              {/* Payment details box */}
-              <div className="w-full sm:max-w-xs space-y-2 text-xs">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#A3A3A3] font-bold block">
-                  Wire Transfer & Remittance Instructions:
-                </span>
-                <div className="p-3.5 rounded-xl bg-[#080808] print:bg-neutral-50 border border-white/5 print:border-neutral-200 font-mono text-[11px] text-[#A3A3A3] print:text-neutral-700 whitespace-pre-line leading-relaxed">
-                  {selectedInvoice.paymentDetails ||
-                    'SKT BRANDING LTD\nBank: Barclays International Private Bank\nIBAN: GB29 BARK 2000 0021 9883 01\nSWIFT / BIC: BARKGB22\nReference: ' +
-                      selectedInvoice.invoiceNumber}
-                </div>
-              </div>
-
-              {/* Totals Table */}
-              <div className="w-full sm:w-64 space-y-2 text-xs font-mono">
-                <div className="flex justify-between text-[#A3A3A3] print:text-neutral-600">
-                  <span>Subtotal:</span>
-                  <span>{formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency)}</span>
-                </div>
-
-                {selectedInvoice.discountRate > 0 && (
-                  <div className="flex justify-between text-[#A3A3A3] print:text-neutral-600">
-                    <span>Discount ({selectedInvoice.discountRate}%):</span>
-                    <span>-{formatCurrency(selectedInvoice.discountAmount, selectedInvoice.currency)}</span>
+                    <div className="pt-2">
+                      <h1 className="text-4xl sm:text-5xl font-black tracking-wider text-white uppercase drop-shadow-[0_2px_14px_rgba(0,0,0,0.5)]">
+                        INVOICE
+                      </h1>
+                      <div className="flex items-center gap-2 pt-1 font-mono">
+                        <span className="text-base sm:text-lg font-bold text-white/95">
+                          # {selectedInvoice.invoiceNumber}
+                        </span>
+                      </div>
+                      <p className="text-xs text-white/75 pt-1">
+                        SKT Branding Inc, {formatDate(selectedInvoice.issueDate)}
+                      </p>
+                    </div>
                   </div>
-                )}
 
-                {selectedInvoice.taxRate > 0 && (
-                  <div className="flex justify-between text-[#A3A3A3] print:text-neutral-600">
-                    <span>Tax / VAT ({selectedInvoice.taxRate}%):</span>
-                    <span>+{formatCurrency(selectedInvoice.taxAmount, selectedInvoice.currency)}</span>
+                  {/* Right Column: Date Information, Invoice Number, Invoice To, Total Due */}
+                  <div className="space-y-3 md:text-right text-xs text-white/90">
+                    <div className="space-y-0.5">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/70 block font-mono">
+                        Date Information
+                      </span>
+                      <span className="font-mono text-xs font-bold text-white block">
+                        {selectedInvoice.issueDate}
+                      </span>
+                    </div>
+
+                    <div className="space-y-0.5 pt-1">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/70 block font-mono">
+                        Invoice Number
+                      </span>
+                      <span className="font-mono text-xs font-bold text-white block">
+                        {selectedInvoice.invoiceNumber}
+                      </span>
+                    </div>
+
+                    <div className="space-y-0.5 pt-1">
+                      <span className="text-[10px] uppercase font-bold tracking-widest text-white/70 block font-mono">
+                        INVOICE TO:
+                      </span>
+                      <p className="text-sm font-extrabold text-white">
+                        {selectedInvoice.clientName}
+                      </p>
+                      {selectedInvoice.clientCompany && (
+                        <p className="text-xs text-white/85">{selectedInvoice.clientCompany}</p>
+                      )}
+                      {selectedInvoice.clientAddress && (
+                        <p className="text-xs text-white/75 whitespace-pre-line leading-relaxed max-w-xs md:ml-auto">
+                          {selectedInvoice.clientAddress}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2 border-t border-white/20">
+                      <span className="text-xs sm:text-sm font-extrabold text-white tracking-wide block">
+                        Total Due: {selectedInvoice.currency}: {formatCurrency(selectedInvoice.balanceDue > 0 ? selectedInvoice.balanceDue : selectedInvoice.total, selectedInvoice.currency)}
+                      </span>
+                    </div>
                   </div>
-                )}
+                </div>
+              </div>
 
-                <div className="border-t border-white/10 print:border-neutral-300 pt-2 flex justify-between font-bold text-sm text-white print:text-black">
-                  <span>Grand Total:</span>
-                  <span className="text-[#FF4D00] print:text-black">
-                    {formatCurrency(selectedInvoice.total, selectedInvoice.currency)}
-                  </span>
+              {/* BODY: TABLE & DETAILS (DARK RED-BLACK LUXURY CONTAINER - ZERO WHITE SPACE) */}
+              <div className="p-6 sm:p-10 space-y-8 bg-[#090505] relative">
+                {/* Table Section */}
+                <div className="space-y-3">
+                  {/* Table Header: Rounded Pill Header Bar */}
+                  <div className="grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#260d0d] via-[#1a0808] to-[#120404] border border-red-500/25 text-xs font-bold text-white uppercase tracking-wider font-mono">
+                    <div className="col-span-1 text-center text-[#FF4D00]">NO.</div>
+                    <div className="col-span-6 pl-2">Item Description</div>
+                    <div className="col-span-2 text-right">Price</div>
+                    <div className="col-span-1 text-center">Qty.</div>
+                    <div className="col-span-2 text-right">Total</div>
+                  </div>
+
+                  {/* Table Rows: Rounded Pill Container for each item */}
+                  <div className="space-y-2.5">
+                    {(selectedInvoice.items || []).map((item, idx) => (
+                      <div
+                        key={item.id || idx}
+                        className="grid grid-cols-12 items-center px-6 py-4 rounded-2xl bg-[#140b0b] hover:bg-[#1f1010] border border-red-950/40 text-xs transition-colors"
+                      >
+                        <div className="col-span-1 text-center font-mono font-bold text-[#FF4D00]">
+                          {String(idx + 1).padStart(2, '0')}.
+                        </div>
+                        <div className="col-span-6 pl-2 space-y-0.5">
+                          <p className="font-bold text-white text-sm">{item.description}</p>
+                          <p className="text-[11px] text-[#A3A3A3]">
+                            {item.category ? `${item.category} Deliverables` : 'Executive Brand Architecture Deliverables'}
+                          </p>
+                        </div>
+                        <div className="col-span-2 text-right font-mono text-white/90 font-medium">
+                          {formatCurrency(item.rate, selectedInvoice.currency)}
+                        </div>
+                        <div className="col-span-1 text-center font-mono text-white/80">
+                          {item.quantity}
+                        </div>
+                        <div className="col-span-2 text-right font-mono font-extrabold text-white text-sm">
+                          {formatCurrency(item.amount, selectedInvoice.currency)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
-                <div className="flex justify-between text-[#A3A3A3] print:text-neutral-600 pt-1">
-                  <span>Amount Paid:</span>
-                  <span className="text-emerald-400 font-bold">
-                    {formatCurrency(selectedInvoice.amountPaid, selectedInvoice.currency)}
-                  </span>
-                </div>
+                {/* Bottom Section: Left (Thanks, Payment, Terms) & Right (Totals & Signature) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-red-950/50">
+                  {/* Left Column */}
+                  <div className="space-y-6">
+                    {/* Thank You & Contacts */}
+                    <div className="space-y-2">
+                      <h3 className="text-lg font-black text-white tracking-tight">
+                        Thank you for your business
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-[#A3A3A3]">
+                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
+                          <Phone className="w-3.5 h-3.5 text-[#FF4D00]" />
+                          <span>{selectedInvoice.clientPhone || '(+971) 4 398 2210'}</span>
+                        </span>
+                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
+                          <Mail className="w-3.5 h-3.5 text-[#FF4D00]" />
+                          <span>billing@sktbranding.com</span>
+                        </span>
+                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
+                          <Globe className="w-3.5 h-3.5 text-[#FF4D00]" />
+                          <span>www.sktbranding.com</span>
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="p-2.5 rounded-xl bg-[#141414] print:bg-neutral-100 border border-white/10 flex justify-between font-bold text-xs">
-                  <span className="text-white print:text-black">Balance Due:</span>
-                  <span
-                    className={
-                      selectedInvoice.balanceDue <= 0 ? 'text-emerald-400' : 'text-amber-400'
-                    }
-                  >
-                    {formatCurrency(selectedInvoice.balanceDue, selectedInvoice.currency)}
-                  </span>
+                    {/* Payment Method */}
+                    <div className="p-4 rounded-2xl bg-[#120a0a] border border-red-950/40 space-y-2">
+                      <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-[#FF4D00] block">
+                        PAYMENT METHOD
+                      </span>
+                      <div className="text-xs text-white/85 space-y-1 font-mono">
+                        <p><strong className="text-white">Bank Account:</strong> SKT BRANDING LTD</p>
+                        <p><strong className="text-white">Bank Full Name:</strong> Barclays International / Emirates NBD</p>
+                        <p><strong className="text-white">Bank Code / SWIFT:</strong> BARCGB22 / EBILAEAD</p>
+                        {selectedInvoice.paymentDetails && (
+                          <p className="text-[11px] text-[#A3A3A3] pt-1 whitespace-pre-line border-t border-white/5">
+                            {selectedInvoice.paymentDetails}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Terms & Conditions */}
+                    <div className="space-y-1 text-xs text-[#737373]">
+                      <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-[#A3A3A3] block">
+                        TERMS & CONDITIONS
+                      </span>
+                      <p className="text-[11px] text-[#8c8c8c] leading-relaxed whitespace-pre-line">
+                        {selectedInvoice.notes ||
+                          'Payment is due upon receipt or within stated terms. All intellectual property, vector files, and master brand assets are formally assigned to client upon full settlement.'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Right Column: Financial Totals & Signature */}
+                  <div className="space-y-4 md:pl-6 md:border-l md:border-red-950/40">
+                    <div className="space-y-2 text-xs font-mono">
+                      <div className="flex justify-between items-center text-[#A3A3A3] px-2">
+                        <span>Sub total</span>
+                        <span>:</span>
+                        <span className="text-white font-medium">
+                          {formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency)}
+                        </span>
+                      </div>
+
+                      {selectedInvoice.taxRate > 0 && (
+                        <div className="flex justify-between items-center text-[#A3A3A3] px-2">
+                          <span>Tax ({selectedInvoice.taxRate}%)</span>
+                          <span>:</span>
+                          <span className="text-white font-medium">
+                            +{formatCurrency(selectedInvoice.taxAmount, selectedInvoice.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      {selectedInvoice.discountRate > 0 && (
+                        <div className="flex justify-between items-center text-[#A3A3A3] px-2">
+                          <span>Discount ({selectedInvoice.discountRate}%)</span>
+                          <span>:</span>
+                          <span className="text-emerald-400 font-medium">
+                            -{formatCurrency(selectedInvoice.discountAmount, selectedInvoice.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Vibrant Red-to-Dark Red Gradient Total Pill (Exactly matching reference!) */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FF2A00] via-[#D60000] to-[#7A0000] text-white flex items-center justify-between font-black text-sm sm:text-base shadow-[0_0_25px_rgba(255,42,0,0.35)] mt-3">
+                        <span className="uppercase tracking-wider">Total</span>
+                        <span className="text-white/60 font-mono">:</span>
+                        <span className="font-mono tracking-tight text-lg sm:text-xl">
+                          {formatCurrency(selectedInvoice.total, selectedInvoice.currency)}
+                        </span>
+                      </div>
+
+                      {/* Amount Paid & Balance Due if applicable */}
+                      {selectedInvoice.amountPaid > 0 && (
+                        <div className="flex justify-between items-center text-xs text-emerald-400 px-2 pt-1 font-mono">
+                          <span>Amount Paid</span>
+                          <span>:</span>
+                          <span className="font-bold">
+                            {formatCurrency(selectedInvoice.amountPaid, selectedInvoice.currency)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center text-xs px-2 pt-1 font-mono">
+                        <span className="text-[#A3A3A3]">Balance Due</span>
+                        <span className="text-[#A3A3A3]">:</span>
+                        <span
+                          className={`font-bold ${
+                            selectedInvoice.balanceDue <= 0 ? 'text-emerald-400' : 'text-amber-400'
+                          }`}
+                        >
+                          {formatCurrency(selectedInvoice.balanceDue, selectedInvoice.currency)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Signature Block (Matching reference design!) */}
+                    <div className="pt-6 text-center md:text-right space-y-1">
+                      <p className="text-sm font-bold text-white tracking-wide">
+                        Steven Joe
+                      </p>
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-[#A3A3A3]">
+                        Accounting Manager
+                      </p>
+                      <div className="flex justify-center md:justify-end pt-1">
+                        <svg
+                          className="w-36 h-12 text-[#FF4D00] filter drop-shadow-[0_0_8px_rgba(255,77,0,0.4)]"
+                          viewBox="0 0 160 50"
+                          fill="none"
+                          stroke="currentColor"
+                        >
+                          <path
+                            d="M 12 34 C 22 14, 34 8, 44 22 C 54 38, 34 44, 60 24 C 76 10, 84 38, 100 18 C 110 8, 120 28, 136 14 C 146 4, 154 24, 158 34"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M 40 34 C 58 28, 88 26, 125 30"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {/* Notes / Footer */}
-            {selectedInvoice.notes && (
-              <div className="pt-4 border-t border-white/10 text-[11px] text-[#737373] print:text-neutral-600 space-y-1">
-                <span className="font-bold text-[#A3A3A3] print:text-black uppercase tracking-wider text-[10px] block">
-                  Terms & Conditions:
-                </span>
-                <p className="whitespace-pre-line leading-relaxed">{selectedInvoice.notes}</p>
-              </div>
-            )}
           </div>
         </div>
       )}
