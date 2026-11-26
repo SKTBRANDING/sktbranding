@@ -17,6 +17,7 @@ import {
   Users,
   Upload,
   Receipt,
+  Building,
 } from 'lucide-react';
 import { DatabaseSchema, Inquiry } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
