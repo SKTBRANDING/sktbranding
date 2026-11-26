@@ -497,6 +497,26 @@
   ],
   "tasks": [
     {
+      "id": "task-17887b24",
+      "title": "POSTER",
+      "client": "CSC",
+      "brief": "CSC",
+      "textContent": "",
+      "voiceBrief": null,
+      "deliverables": "",
+      "dimensions": "",
+      "fileFormats": "AI, PSD, PDF, High-Res PNG",
+      "priority": "medium",
+      "status": "assigned",
+      "assignedDesignerId": "des-1",
+      "assignedDesignerName": "FIDHA WAFIYYA",
+      "assignedAt": "2026-11-26T14:16:29.257Z",
+      "deadline": "2026-12-03",
+      "referenceFiles": [],
+      "submissions": [],
+      "createdAt": "2026-11-26T14:16:29.257Z"
+    },
+    {
       "id": "task-02c4756c",
       "title": "POSTER DESIGN",
       "client": "BAITUL RASA",

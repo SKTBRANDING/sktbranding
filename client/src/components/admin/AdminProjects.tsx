@@ -733,13 +733,13 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                 
                 <div className="flex flex-col sm:flex-row gap-4 items-start">
                   {/* Image Preview Box */}
-                  <div className={`w-full sm:w-44 ${formData.category === 'Social Media' ? 'aspect-[16/9]' : 'aspect-[16/10]'} rounded-xl overflow-hidden bg-black border border-white/10 flex-shrink-0`}>
+                  <div className={`w-full sm:w-44 ${formData.category === 'Social Media' ? 'aspect-[16/9]' : 'aspect-[16/10]'} rounded-xl overflow-hidden bg-white border border-white/20 flex-shrink-0 p-1 flex items-center justify-center`}>
                     {formData.coverImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={formData.coverImage}
                         alt="Preview"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs text-[#737373]">
@@ -857,7 +857,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                     {formData.galleryImages.map((mediaUrl, idx) => {
                       const isVid = isDirectVideo(mediaUrl);
                       return (
-                        <div key={idx} className="relative group aspect-[16/10] rounded-lg overflow-hidden bg-black border border-white/10">
+                        <div key={idx} className="relative group aspect-[16/10] rounded-lg overflow-hidden bg-white border border-white/20 p-1 flex items-center justify-center">
                           {isVid ? (
                             <div className="relative w-full h-full bg-black">
                               <video src={mediaUrl} className="w-full h-full object-cover" muted playsInline />
@@ -867,7 +867,7 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
                             </div>
                           ) : (
                             /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={mediaUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                            <img src={mediaUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-contain" />
                           )}
                           <button
                             type="button"

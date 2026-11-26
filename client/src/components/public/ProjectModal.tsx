@@ -9,12 +9,12 @@ function ModalMediaImage({ src, alt, className = '' }: { src: string; alt: strin
   const [hasError, setHasError] = useState(false);
 
   return (
-    <div className={`relative w-full h-full bg-[#111] overflow-hidden ${className}`}>
+    <div className={`relative w-full flex items-center justify-center bg-white overflow-hidden ${className}`}>
       {!isLoaded && !hasError && (
-        <div className="absolute inset-0 bg-gradient-to-r from-white/[0.02] via-white/[0.08] to-white/[0.02] animate-pulse" />
+        <div className="absolute inset-0 bg-neutral-100 animate-pulse" />
       )}
       {hasError ? (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-[#141414] p-4 text-center">
+        <div className="w-full h-48 flex flex-col items-center justify-center bg-white p-4 text-center">
           <Sparkles className="w-5 h-5 text-[#FF4D00]/50 mb-1" />
           <span className="text-xs text-[#737373]">{alt}</span>
         </div>
@@ -26,7 +26,7 @@ function ModalMediaImage({ src, alt, className = '' }: { src: string; alt: strin
           decoding="async"
           onLoad={() => setIsLoaded(true)}
           onError={() => setHasError(true)}
-          className={`w-full h-full object-cover object-center transition-opacity duration-500 ${
+          className={`w-full h-auto max-h-[90vh] object-contain object-center transition-opacity duration-300 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
         />
@@ -157,12 +157,15 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             </div>
           </div>
 
-          {/* Hero Cover Image */}
-          <div className={`rounded-2xl overflow-hidden border border-white/10 shadow-lg ${project.category === 'Social Media' ? 'aspect-[16/9]' : 'aspect-[16/10]'} bg-[#141414]`}>
-            <ModalMediaImage
-              src={project.coverImage}
-              alt={project.imageAlt || project.title}
-            />
+          {/* Hero Cover Image (White Background with Black Outer Spacing) */}
+          <div className="rounded-2xl sm:rounded-3xl overflow-hidden bg-white shadow-2xl p-2 sm:p-4 border border-white/20">
+            <div className="w-full flex items-center justify-center bg-white rounded-xl sm:rounded-2xl overflow-hidden">
+              <img
+                src={project.coverImage}
+                alt={project.imageAlt || project.title}
+                className="w-full h-auto max-h-[90vh] object-contain object-center rounded-xl"
+              />
+            </div>
           </div>
 
           {/* Dedicated Video & Motion Showcase */}
@@ -236,75 +239,35 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             </div>
           )}
 
-          {/* Overview & Services Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8 py-4 border-y border-white/10">
-            <div className="md:col-span-7 space-y-3">
-              <h3 className="text-xs uppercase tracking-widest text-[#FF4D00] font-bold">
-                Project Overview
-              </h3>
-              <p className="text-base text-[#A3A3A3] leading-relaxed">
-                {project.overview}
-              </p>
-            </div>
-
-            <div className="md:col-span-5 space-y-3">
-              <h3 className="text-xs uppercase tracking-widest text-[#FF4D00] font-bold">
-                Services Provided
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {project.services && project.services.length > 0 ? (
-                  project.services.map((srv, idx) => (
-                    <span
-                      key={idx}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-[#141414] border border-white/10 text-white"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5 text-[#FF4D00]" />
-                      {srv}
-                    </span>
-                  ))
-                ) : (
-                  <span className="text-sm text-[#737373]">General Brand Execution</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Design Approach */}
-          {project.approach && (
-            <div className="space-y-3">
-              <h3 className="text-xs uppercase tracking-widest text-[#FF4D00] font-bold">
-                Strategic Approach & Execution
-              </h3>
-              <p className="text-base text-[#A3A3A3] leading-relaxed whitespace-pre-line">
-                {project.approach}
-              </p>
-            </div>
-          )}
-
-          {/* Multiple Gallery Images & Media Assets */}
+          {/* Multiple Gallery Images & Media Assets (White Background with Black Space Between Cards) */}
           {project.galleryImages && project.galleryImages.length > 0 && (
-            <div className="space-y-6 pt-2">
-              <h3 className="text-xs uppercase tracking-widest text-[#A3A3A3] font-bold">
-                Design Collateral & Mockups ({project.galleryImages.length})
-              </h3>
-              <div className="grid grid-cols-1 gap-6">
+            <div className="space-y-6 sm:space-y-8 pt-2">
+              <div className="grid grid-cols-1 gap-6 sm:gap-8">
                 {project.galleryImages.map((mediaUrl, i) => {
                   const isVid = isVideoFile(mediaUrl);
                   return (
-                    <div key={i} className="rounded-2xl overflow-hidden border border-white/10 bg-[#141414] aspect-[16/9]">
+                    <div
+                      key={i}
+                      className="rounded-2xl sm:rounded-3xl overflow-hidden bg-white shadow-2xl p-2 sm:p-4 border border-white/20 transition-transform duration-300 hover:scale-[1.005]"
+                    >
                       {isVid ? (
                         <video
                           src={mediaUrl}
                           controls
                           playsInline
                           preload="metadata"
-                          className="w-full h-full object-cover bg-black"
+                          className="w-full h-auto max-h-[85vh] object-contain rounded-xl sm:rounded-2xl bg-black"
                         />
                       ) : (
-                        <ModalMediaImage
-                          src={mediaUrl}
-                          alt={`${project.title} - Showcase Exhibit ${i + 1}`}
-                        />
+                        <div className="w-full flex items-center justify-center bg-white rounded-xl sm:rounded-2xl overflow-hidden">
+                          <img
+                            src={mediaUrl}
+                            alt={`${project.title} - Showcase Exhibit ${i + 1}`}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-auto max-h-[92vh] object-contain object-center rounded-xl"
+                          />
+                        </div>
                       )}
                     </div>
                   );
