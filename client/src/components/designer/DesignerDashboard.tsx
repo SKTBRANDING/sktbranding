@@ -1014,13 +1014,10 @@ export default function DesignerDashboard({
                       {task.brief}
                     </p>
 
-                    {/* Work Specs / Rate snippet */}
+                    {/* Work Specifications */}
                     <div className="p-2.5 rounded-xl bg-black border border-white/5 space-y-1">
-                      <span className="text-[10px] uppercase font-bold text-[#A3A3A3] block flex items-center justify-between">
-                        <span>Work Specifications</span>
-                        {task.rate !== undefined && (
-                          <span className="text-emerald-400 font-mono font-bold">₹{task.rate} INR</span>
-                        )}
+                      <span className="text-[10px] uppercase font-bold text-[#A3A3A3] block">
+                        Work Specifications
                       </span>
                       <p className="text-xs text-white truncate">
                         {task.dimensions ? `${task.dimensions} • ` : ''}
@@ -1319,11 +1316,10 @@ export default function DesignerDashboard({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl bg-[#141414] border border-white/5 space-y-1">
                   <span className="text-[10px] uppercase font-bold text-[#A3A3A3] block">
-                    Work Assign Date & Rate
+                    Work Assign Date
                   </span>
                   <p className="text-xs text-white font-medium">
                     {selectedTask.assignedAt ? `Assigned: ${selectedTask.assignedAt.slice(0, 10)}` : 'Active'}
-                    {selectedTask.rate !== undefined ? ` • ₹${selectedTask.rate} INR` : ''}
                   </p>
                 </div>
 

@@ -324,7 +324,7 @@ export default function AdminOverview({
                     </div>
                     <div className="text-left">
                       <span className="block text-white font-bold">Upload & Assign Work</span>
-                      <span className="block text-[10px] text-[#A3A3A3] font-normal">Add client details, service type, rate (INR) & brief</span>
+                      <span className="block text-[10px] text-[#A3A3A3] font-normal">Assign creative brief & specs to designers by client name</span>
                     </div>
                   </div>
                   <ArrowUpRight className="w-4 h-4 text-[#FF4D00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />

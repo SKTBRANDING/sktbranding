@@ -31,6 +31,8 @@ import {
   MapPin,
   Building,
   Tag,
+  UserCheck,
+  Flag,
 } from 'lucide-react';
 import { Task, Designer, TaskAttachment, TaskPriority, TaskStatus, Client } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
@@ -335,11 +337,23 @@ export default function AdminTasks({
 
     setSavingTask(true);
     try {
+      const matchedClient = clients.find(
+        (c) => c.name.toLowerCase() === formData.client.trim().toLowerCase()
+      );
+      const matchedServiceRate = matchedClient?.serviceRates?.find(
+        (sr) => sr.serviceName.toLowerCase() === formData.serviceCategory.toLowerCase()
+      );
+      const effectiveRate = matchedServiceRate ? matchedServiceRate.rate : (formData.rate || 300);
+      const payload = {
+        ...formData,
+        rate: effectiveRate,
+      };
+
       if (editingTask) {
         const res = await adminFetch(`/api/tasks/${editingTask.id}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'Failed to update task');
@@ -348,7 +362,7 @@ export default function AdminTasks({
         const res = await adminFetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData),
+          body: JSON.stringify(payload),
         });
         const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'Failed to create task');
@@ -1263,164 +1277,91 @@ export default function AdminTasks({
                       <Tag className="w-3.5 h-3.5" />
                       <span>Service Offering / Category *</span>
                     </span>
-                    {currentClient && (
-                      <span className="text-[10px] text-emerald-400 font-mono font-bold lowercase">
-                        (Client custom rates applied)
-                      </span>
-                    )}
                   </label>
                   <select
                     value={formData.serviceCategory}
                     onChange={(e) => {
-                      const selected = availableServices.find((s) => s.name === e.target.value);
                       setFormData({
                         ...formData,
                         serviceCategory: e.target.value,
-                        rate: selected ? selected.defaultRate : formData.rate,
                       });
                     }}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                   >
                     {availableServices.map((s) => (
                       <option key={s.name} value={s.name}>
-                        {s.name} (₹{s.defaultRate.toLocaleString()} INR)
+                        {s.name}
                       </option>
                     ))}
                   </select>
                 </div>
               </div>
 
-              {/* CLIENT DETAILS & BILLING RECIPIENT SECTION */}
-              <div className="p-4 rounded-2xl bg-[#120a0a] border border-[#FF4D00]/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-mono uppercase font-bold tracking-wider text-[#FF4D00] flex items-center gap-1.5">
-                    <Building className="w-3.5 h-3.5" />
-                    <span>Client Details & Billing Information</span>
+              {/* Client / Brand Name Selection (Simplified: Only Client Name) */}
+              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 space-y-2">
+                <label className="block text-xs uppercase font-bold text-white flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>Client / Brand Name *</span>
                   </span>
-                  <span className="text-[10px] text-[#A3A3A3]">Auto-populates on client invoice</span>
-                </div>
+                  {currentClient && (
+                    <span className="text-[10px] text-emerald-400 font-mono font-medium">
+                      ✓ Profile Linked ({currentClient.company || currentClient.name})
+                    </span>
+                  )}
+                </label>
 
-                {/* Quick Select Client Profile Dropdown & Add New Client Button */}
-                {clients && clients.length > 0 && (
-                  <div className="p-2.5 rounded-xl bg-black/70 border border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
-                    <div className="flex items-center gap-2 flex-1">
-                      <span className="text-[10px] uppercase font-bold text-[#A3A3A3] whitespace-nowrap">
-                        Load Client:
-                      </span>
-                      <select
-                        onChange={(e) => {
-                          const cl = clients.find((c) => c.name === e.target.value || c.id === e.target.value);
-                          if (cl) {
-                            const matchedService = (cl.serviceRates || []).find(
-                              (s) => s.serviceName.toLowerCase() === formData.serviceCategory.toLowerCase()
-                            );
-                            setFormData((prev) => ({
-                              ...prev,
-                              client: cl.name,
-                              clientCompany: cl.company || '',
-                              clientPhone: cl.phone || '',
-                              clientEmail: cl.email || '',
-                              clientAddress: cl.address || '',
-                              rate: matchedService ? matchedService.rate : prev.rate,
-                            }));
-                          }
-                        }}
-                        className="flex-1 px-3 py-1.5 rounded-lg bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                        defaultValue=""
-                      >
-                        <option value="">-- Choose from saved client list --</option>
-                        {clients.map((c) => (
-                          <option key={c.id || c.name} value={c.name}>
-                            {c.name} {c.company ? `(${c.company})` : ''}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {onOpenClientModal && (
-                      <button
-                        type="button"
-                        onClick={onOpenClientModal}
-                        className="px-3 py-1.5 rounded-lg bg-[#FF4D00]/15 hover:bg-[#FF4D00]/25 text-[#FF4D00] text-xs font-bold border border-[#FF4D00]/30 transition-colors flex items-center gap-1.5 self-start sm:self-auto flex-shrink-0"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Add New Client</span>
-                      </button>
-                    )}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
-                      <User className="w-3 h-3 text-[#FF4D00]" />
-                      <span>Client / Brand Name *</span>
-                    </label>
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <div className="relative flex-1 w-full">
                     <input
                       type="text"
                       required
                       placeholder="e.g. Baithul Rasa"
                       value={formData.client}
-                      onChange={(e) => setFormData({ ...formData, client: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const matched = clients.find(
+                          (c) => c.name.toLowerCase() === val.trim().toLowerCase()
+                        );
+                        setFormData((prev) => ({
+                          ...prev,
+                          client: val,
+                          clientCompany: matched ? matched.company || '' : prev.clientCompany,
+                          clientPhone: matched ? matched.phone || '' : prev.clientPhone,
+                          clientEmail: matched ? matched.email || '' : prev.clientEmail,
+                          clientAddress: matched ? matched.address || '' : prev.clientAddress,
+                        }));
+                      }}
+                      className="w-full px-4 py-2.5 rounded-xl bg-black/60 border border-white/10 text-xs text-white placeholder-[#525252] focus:outline-none focus:border-[#FF4D00]"
                     />
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
-                      <Building className="w-3 h-3 text-[#FF4D00]" />
-                      <span>Company / Entity Name</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Baithul Rasa Hospitality & Estate"
-                      value={formData.clientCompany}
-                      onChange={(e) => setFormData({ ...formData, clientCompany: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
-                      <Phone className="w-3 h-3 text-[#FF4D00]" />
-                      <span>Client Phone Number / WhatsApp</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g. +91 9544931226"
-                      value={formData.clientPhone}
-                      onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
-                      <Mail className="w-3 h-3 text-[#FF4D00]" />
-                      <span>Client Email Address</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="e.g. billing@baithulrasa.com"
-                      value={formData.clientEmail}
-                      onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1 pt-1">
-                  <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
-                    <MapPin className="w-3 h-3 text-[#FF4D00]" />
-                    <span>Client Billing Address</span>
-                  </label>
-                  <textarea
-                    rows={2}
-                    placeholder="e.g. 270 5th Avenue, Calicut, Kerala, India"
-                    value={formData.clientAddress}
-                    onChange={(e) => setFormData({ ...formData, clientAddress: e.target.value })}
-                    className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                  />
+                  {clients && clients.length > 0 && (
+                    <select
+                      value=""
+                      onChange={(e) => {
+                        const cl = clients.find((c) => c.name === e.target.value);
+                        if (cl) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            client: cl.name,
+                            clientCompany: cl.company || '',
+                            clientPhone: cl.phone || '',
+                            clientEmail: cl.email || '',
+                            clientAddress: cl.address || '',
+                          }));
+                        }
+                      }}
+                      className="w-full sm:w-auto px-3.5 py-2.5 rounded-xl bg-black/80 border border-white/10 text-xs text-[#A3A3A3] focus:outline-none focus:border-[#FF4D00]"
+                    >
+                      <option value="">Quick Pick Client...</option>
+                      {clients.map((c) => (
+                        <option key={c.id || c.name} value={c.name}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
               </div>
 
@@ -1527,62 +1468,18 @@ export default function AdminTasks({
                 </div>
               </div>
 
-              {/* Work Rate (for Client Invoice), Assign Designer, Priority */}
-              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="block text-xs uppercase font-bold text-white flex items-center gap-1.5">
-                    <span className="text-[#FF4D00] text-sm font-black">₹</span>
-                    <span>Service Rate & Pricing (INR) *</span>
-                  </label>
-                  <span className="text-[10px] text-[#A3A3A3]">Auto-invoiced on submission</span>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] text-[#737373] uppercase font-semibold">Quick Presets:</span>
-                  {[300, 500, 800, 1000, 1500, 2000, 3500].map((preset) => (
-                    <button
-                      key={preset}
-                      type="button"
-                      onClick={() => setFormData({ ...formData, rate: preset })}
-                      className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all ${
-                        formData.rate === preset
-                          ? 'bg-[#FF4D00] text-black shadow-md'
-                          : 'bg-white/5 hover:bg-white/15 text-white border border-white/10'
-                      }`}
-                    >
-                      ₹{preset.toLocaleString()}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+              {/* Assign Designer & Priority */}
+              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
-                      Custom Rate (INR)
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-2.5 text-xs font-bold text-[#FF4D00]">₹</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="50"
-                        required
-                        placeholder="300"
-                        value={formData.rate}
-                        onChange={(e) => setFormData({ ...formData, rate: Number(e.target.value) || 0 })}
-                        className="w-full pl-8 pr-4 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono font-bold"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
-                      Assign Designer
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1.5">
+                      <UserCheck className="w-3.5 h-3.5 text-[#FF4D00]" />
+                      <span>Assign Designer</span>
                     </label>
                     <select
                       value={formData.assignedDesignerId}
                       onChange={(e) => setFormData({ ...formData, assignedDesignerId: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                     >
                       <option value="">Available for any designer</option>
                       {designers.map((d) => (
@@ -1594,13 +1491,14 @@ export default function AdminTasks({
                   </div>
 
                   <div className="space-y-1">
-                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
-                      Priority
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1.5">
+                      <Flag className="w-3.5 h-3.5 text-[#FF4D00]" />
+                      <span>Priority</span>
                     </label>
                     <select
                       value={formData.priority}
                       onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-                      className="w-full px-3.5 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                     >
                       <option value="low">Low Priority</option>
                       <option value="medium">Medium Priority</option>

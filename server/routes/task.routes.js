@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const Task = require('../models/Task');
 const Designer = require('../models/Designer');
 const Invoice = require('../models/Invoice');
+const Client = require('../models/Client');
 const { requireAdmin, requireDesigner, requireAnyAuth } = require('../middleware/auth');
 const { upload, getFileCategory } = require('../middleware/upload');
 const { isCloudinaryConfigured, uploadToCloudinary } = require('../config/cloudinary');
@@ -437,13 +438,48 @@ async function recordSubmissionToClientInvoice(task) {
     const clientName = (task.client || '').trim();
     if (!clientName) return;
 
-    const rate = Math.max(0, Number(task.rate) || 300);
     const category = (task.serviceCategory || task.serviceName || 'Design Deliverables').trim();
     const itemDescription = (task.title || 'Creative Deliverable').trim();
     const todayStr = new Date().toISOString().split('T')[0];
     const dueDateStr = task.deadline
       ? String(task.deadline).slice(0, 10)
       : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+    // Look up client profile for custom rates and contact information
+    let clientRecord = null;
+    if (isMongoConnected()) {
+      try {
+        clientRecord = await Client.findOne({
+          name: new RegExp(`^${clientName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+        });
+      } catch (err) {}
+    }
+    const jsonDb = getJsonDb();
+    const dbClient = (jsonDb.clients || []).find(
+      (c) => (c.name || '').trim().toLowerCase() === clientName.toLowerCase()
+    );
+
+    // Determine accurate service rate (e.g. Poster ₹300, Video ₹500)
+    let rate = Number(task.rate) || 0;
+    if (!rate) {
+      const clientRates = (clientRecord && clientRecord.serviceRates) || (dbClient && dbClient.serviceRates) || [];
+      const matched = clientRates.find(
+        (r) => (r.serviceName || '').trim().toLowerCase() === category.toLowerCase()
+      );
+      if (matched && Number(matched.rate)) {
+        rate = Number(matched.rate);
+      }
+    }
+    if (!rate) {
+      if (/video/i.test(category) || /reels/i.test(category)) rate = 500;
+      else if (/poster/i.test(category)) rate = 300;
+      else rate = 300;
+    }
+
+    const clientCompany = task.clientCompany || (clientRecord && clientRecord.company) || (dbClient && dbClient.company) || clientName;
+    const clientPhone = task.clientPhone || (clientRecord && clientRecord.phone) || (dbClient && dbClient.phone) || '';
+    const clientEmail = task.clientEmail || (clientRecord && clientRecord.email) || (dbClient && dbClient.email) || `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`;
+    const clientAddress = task.clientAddress || (clientRecord && clientRecord.address) || (dbClient && dbClient.address) || '';
 
     // 1. Sync to Mongo if connected
     if (isMongoConnected()) {
@@ -488,10 +524,10 @@ async function recordSubmissionToClientInvoice(task) {
           invoice.total = total;
           invoice.balanceDue = balanceDue;
           if (!invoice.currency) invoice.currency = 'INR';
-          if (task.clientCompany && !invoice.clientCompany) invoice.clientCompany = task.clientCompany;
-          if (task.clientPhone && !invoice.clientPhone) invoice.clientPhone = task.clientPhone;
-          if (task.clientEmail && !invoice.clientEmail) invoice.clientEmail = task.clientEmail;
-          if (task.clientAddress && !invoice.clientAddress) invoice.clientAddress = task.clientAddress;
+          if (!invoice.clientCompany && clientCompany) invoice.clientCompany = clientCompany;
+          if (!invoice.clientPhone && clientPhone) invoice.clientPhone = clientPhone;
+          if (!invoice.clientEmail && clientEmail) invoice.clientEmail = clientEmail;
+          if (!invoice.clientAddress && clientAddress) invoice.clientAddress = clientAddress;
 
           await invoice.save();
         } else {
@@ -502,12 +538,12 @@ async function recordSubmissionToClientInvoice(task) {
           const newInv = new Invoice({
             id: `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
             invoiceNumber,
-            clientId: '',
+            clientId: (clientRecord && clientRecord.id) || (dbClient && dbClient.id) || '',
             clientName,
-            clientEmail: task.clientEmail || `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
-            clientCompany: task.clientCompany || clientName,
-            clientPhone: task.clientPhone || '',
-            clientAddress: task.clientAddress || '',
+            clientEmail,
+            clientCompany,
+            clientPhone,
+            clientAddress,
             projectName: `${itemDescription}`,
             issueDate: todayStr,
             dueDate: dueDateStr,
@@ -586,10 +622,10 @@ async function recordSubmissionToClientInvoice(task) {
         existingInv.total = total;
         existingInv.balanceDue = balanceDue;
         if (!existingInv.currency) existingInv.currency = 'INR';
-        if (task.clientCompany && !existingInv.clientCompany) existingInv.clientCompany = task.clientCompany;
-        if (task.clientPhone && !existingInv.clientPhone) existingInv.clientPhone = task.clientPhone;
-        if (task.clientEmail && !existingInv.clientEmail) existingInv.clientEmail = task.clientEmail;
-        if (task.clientAddress && !existingInv.clientAddress) existingInv.clientAddress = task.clientAddress;
+        if (!existingInv.clientCompany && clientCompany) existingInv.clientCompany = clientCompany;
+        if (!existingInv.clientPhone && clientPhone) existingInv.clientPhone = clientPhone;
+        if (!existingInv.clientEmail && clientEmail) existingInv.clientEmail = clientEmail;
+        if (!existingInv.clientAddress && clientAddress) existingInv.clientAddress = clientAddress;
         existingInv.updatedAt = new Date().toISOString();
       } else {
         const year = new Date().getFullYear();
@@ -597,12 +633,12 @@ async function recordSubmissionToClientInvoice(task) {
         const newInv = {
           id: `inv-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
           invoiceNumber,
-          clientId: '',
+          clientId: (clientRecord && clientRecord.id) || (dbClient && dbClient.id) || '',
           clientName,
-          clientEmail: task.clientEmail || `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
-          clientPhone: task.clientPhone || '',
-          clientCompany: task.clientCompany || clientName,
-          clientAddress: task.clientAddress || '',
+          clientEmail,
+          clientPhone,
+          clientCompany,
+          clientAddress,
           projectId: '',
           projectName: itemDescription,
           issueDate: todayStr,
