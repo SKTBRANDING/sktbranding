@@ -27,12 +27,22 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
         body: JSON.stringify({ password }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Authentication failed. Please try again.');
+      let data: any = null;
+      const text = await res.text();
+      try {
+        data = text ? JSON.parse(text) : {};
+      } catch (parseErr) {
+        data = {};
       }
 
-      if (data.token) {
+      if (!res.ok) {
+        throw new Error(
+          (data && data.error) ||
+          `Authentication failed (${res.status}). Please check credentials or ensure backend server is running.`
+        );
+      }
+
+      if (data && data.token) {
         setAdminToken(data.token);
       }
 
