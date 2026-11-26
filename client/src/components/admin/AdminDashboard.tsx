@@ -116,29 +116,37 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
         adminFetch('/api/invoices'),
       ]);
 
+      const safeJson = async (res: Response) => {
+        try {
+          return await res.json();
+        } catch {
+          return null;
+        }
+      };
+
       const [projects, services, content, testimonials, inquiries, settings, tasks, designers, invoices] = await Promise.all([
-        projRes.json(),
-        servRes.json(),
-        contRes.json(),
-        testRes.json(),
-        inqRes.json(),
-        settRes.json(),
-        taskRes.json(),
-        desRes.json(),
-        invRes.json(),
+        safeJson(projRes),
+        safeJson(servRes),
+        safeJson(contRes),
+        safeJson(testRes),
+        safeJson(inqRes),
+        safeJson(settRes),
+        safeJson(taskRes),
+        safeJson(desRes),
+        safeJson(invRes),
       ]);
 
-      setData({
-        projects: Array.isArray(projects) ? projects : data.projects,
-        services: Array.isArray(services) ? services : data.services,
-        content: content || data.content,
-        testimonials: Array.isArray(testimonials) ? testimonials : data.testimonials,
-        inquiries: Array.isArray(inquiries) ? inquiries : data.inquiries,
-        settings: settings || data.settings,
-        tasks: Array.isArray(tasks) ? tasks : data.tasks || [],
-        designers: Array.isArray(designers) ? designers : data.designers || [],
-        invoices: Array.isArray(invoices) ? invoices : data.invoices || [],
-      });
+      setData((prev) => ({
+        projects: Array.isArray(projects) ? projects : prev.projects,
+        services: Array.isArray(services) ? services : prev.services,
+        content: content && !content.error && content.hero ? content : prev.content,
+        testimonials: Array.isArray(testimonials) ? testimonials : prev.testimonials,
+        inquiries: Array.isArray(inquiries) ? inquiries : prev.inquiries,
+        settings: settings && !settings.error && settings.agencyName ? settings : prev.settings,
+        tasks: Array.isArray(tasks) ? tasks : prev.tasks || [],
+        designers: Array.isArray(designers) ? designers : prev.designers || [],
+        invoices: Array.isArray(invoices) ? invoices : prev.invoices || [],
+      }));
     } catch (err) {
       console.error('Error refreshing admin data:', err);
     }

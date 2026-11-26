@@ -120,10 +120,12 @@ export default function AdminTasks({
 
   // Filter tasks
   const filteredTasks = (tasks || []).filter((task) => {
+    const q = (search || '').toLowerCase().trim();
     const matchesSearch =
-      task.title.toLowerCase().includes(search.toLowerCase()) ||
-      task.client.toLowerCase().includes(search.toLowerCase()) ||
-      (task.assignedDesignerName && task.assignedDesignerName.toLowerCase().includes(search.toLowerCase()));
+      !q ||
+      (task.title || '').toLowerCase().includes(q) ||
+      (task.client || '').toLowerCase().includes(q) ||
+      ((task.assignedDesignerName || '').toLowerCase().includes(q));
 
     const matchesStatus =
       statusFilter === 'all'
@@ -1052,7 +1054,7 @@ export default function AdminTasks({
                     <span className="text-[10px] uppercase tracking-wider text-[#A3A3A3] font-bold block">
                       Reference Attachments ({selectedTask.referenceFiles?.length || 0})
                     </span>
-                    {selectedTask.referenceFiles?.length > 0 ? (
+                    {Array.isArray(selectedTask.referenceFiles) && selectedTask.referenceFiles.length > 0 ? (
                       <div className="space-y-2">
                         {selectedTask.referenceFiles.map((file) => (
                           <FileAttachmentCard key={file.id || file.url} file={file} readOnly={true} />
@@ -1335,7 +1337,7 @@ export default function AdminTasks({
                   </span>
                 </div>
 
-                {formData.referenceFiles.length > 0 ? (
+                {Array.isArray(formData.referenceFiles) && formData.referenceFiles.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                     {formData.referenceFiles.map((file, idx) => (
                       <FileAttachmentCard
@@ -1344,7 +1346,7 @@ export default function AdminTasks({
                         onRemove={() =>
                           setFormData((prev) => ({
                             ...prev,
-                            referenceFiles: prev.referenceFiles.filter((_, i) => i !== idx),
+                            referenceFiles: (prev.referenceFiles || []).filter((_, i) => i !== idx),
                           }))
                         }
                       />

@@ -90,8 +90,8 @@ function AdminPage() {
           setData((prev) => ({
             projects: Array.isArray(projects) ? projects : prev.projects,
             services: Array.isArray(services) ? services : prev.services,
-            content: content || prev.content,
-            settings: settings || prev.settings,
+            content: content && !content.error && content.hero ? content : prev.content,
+            settings: settings && !settings.error && settings.agencyName ? settings : prev.settings,
             testimonials: Array.isArray(testimonials) ? testimonials : prev.testimonials,
             inquiries: Array.isArray(inquiries) ? inquiries : prev.inquiries || [],
             tasks: Array.isArray(tasks) ? tasks : prev.tasks || [],

@@ -105,12 +105,14 @@ export default function AdminInquiries({
     }
   };
 
-  const filteredInquiries = inquiries.filter((inq) => {
+  const filteredInquiries = (inquiries || []).filter((inq) => {
+    const q = (search || '').toLowerCase().trim();
     const matchesSearch =
-      inq.name.toLowerCase().includes(search.toLowerCase()) ||
-      inq.email.toLowerCase().includes(search.toLowerCase()) ||
-      (inq.company && inq.company.toLowerCase().includes(search.toLowerCase())) ||
-      inq.service.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      (inq.name || '').toLowerCase().includes(q) ||
+      (inq.email || '').toLowerCase().includes(q) ||
+      (inq.company || '').toLowerCase().includes(q) ||
+      (inq.service || '').toLowerCase().includes(q);
 
     const matchesStatus = filterStatus === 'All' || inq.status === filterStatus;
     return matchesSearch && matchesStatus;

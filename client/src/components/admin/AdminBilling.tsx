@@ -178,7 +178,7 @@ export default function AdminBilling({
 
   // Auto-calculated totals in Form Data
   const formCalculations = useMemo(() => {
-    const subtotal = formData.items.reduce((acc, item) => acc + (Number(item.quantity) * Number(item.rate) || 0), 0);
+    const subtotal = (formData.items || []).reduce((acc, item) => acc + (Number(item?.quantity) * Number(item?.rate) || 0), 0);
     const discountAmount = (subtotal * (Number(formData.discountRate) || 0)) / 100;
     const taxable = Math.max(0, subtotal - discountAmount);
     const taxAmount = (taxable * (Number(formData.taxRate) || 0)) / 100;
@@ -269,7 +269,7 @@ export default function AdminBilling({
 
   const handleClientSelect = (clientName: string) => {
     // If client is selected from an existing project, auto-fill project details
-    const proj = projects.find((p) => p.client.toLowerCase() === clientName.toLowerCase());
+    const proj = (projects || []).find((p) => (p?.client || '').toLowerCase() === (clientName || '').toLowerCase());
     if (proj) {
       setFormData((prev) => ({
         ...prev,
@@ -846,12 +846,12 @@ export default function AdminBilling({
           <style>{`
             @media print {
               @page {
-                margin: 0;
+                margin: 8mm;
                 size: auto;
               }
               body {
-                background: #080404 !important;
-                color: #ffffff !important;
+                background: #ffffff !important;
+                color: #000000 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
@@ -866,6 +866,8 @@ export default function AdminBilling({
                 max-width: 100% !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background: #ffffff !important;
+                color: #000000 !important;
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
               }
@@ -927,8 +929,8 @@ export default function AdminBilling({
               </div>
             </div>
 
-            {/* INVOICE CANVAS (RED & BLACK GRADIENT - ZERO WHITE SPACE) */}
-            <div className="print-invoice-sheet bg-[#090505] text-white rounded-[32px] overflow-hidden border border-red-950/60 shadow-[0_0_50px_rgba(255,42,0,0.18)] relative">
+            {/* INVOICE CANVAS (TOP RED/BLACK GRADIENT + CRISP WHITE BODY WITH RED & BLACK TEXT) */}
+            <div className="print-invoice-sheet bg-white text-black rounded-[32px] overflow-hidden border border-neutral-200 shadow-[0_20px_60px_rgba(0,0,0,0.35)] relative">
               
               {/* TOP HEADER: CRIMSON RED TO VELVET BLACK GRADIENT BANNER */}
               <div className="relative p-7 sm:p-10 bg-gradient-to-br from-[#150202] via-[#4d0703] to-[#FF2A00] text-white overflow-hidden">
@@ -1018,17 +1020,17 @@ export default function AdminBilling({
                 </div>
               </div>
 
-              {/* BODY: TABLE & DETAILS (DARK RED-BLACK LUXURY CONTAINER - ZERO WHITE SPACE) */}
-              <div className="p-6 sm:p-10 space-y-8 bg-[#090505] relative">
+              {/* BODY: TABLE & DETAILS (CRISP WHITE BACKGROUND WITH RED & BLACK TYPOGRAPHY) */}
+              <div className="p-6 sm:p-10 space-y-8 bg-white text-black relative">
                 {/* Table Section */}
                 <div className="space-y-3">
-                  {/* Table Header: Rounded Pill Header Bar */}
-                  <div className="grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl bg-gradient-to-r from-[#260d0d] via-[#1a0808] to-[#120404] border border-red-500/25 text-xs font-bold text-white uppercase tracking-wider font-mono">
-                    <div className="col-span-1 text-center text-[#FF4D00]">NO.</div>
-                    <div className="col-span-6 pl-2">Item Description</div>
-                    <div className="col-span-2 text-right">Price</div>
-                    <div className="col-span-1 text-center">Qty.</div>
-                    <div className="col-span-2 text-right">Total</div>
+                  {/* Table Header: Light Pill Container matching Sempurna Reference */}
+                  <div className="grid grid-cols-12 items-center px-6 py-3.5 rounded-2xl bg-[#F0F2F5] border border-neutral-200 text-xs font-bold text-neutral-800 uppercase tracking-wider font-mono">
+                    <div className="col-span-1 text-center text-[#D60000]">NO.</div>
+                    <div className="col-span-6 pl-2 text-black">Item Description</div>
+                    <div className="col-span-2 text-right text-black">Price</div>
+                    <div className="col-span-1 text-center text-black">Qty.</div>
+                    <div className="col-span-2 text-right text-black">Total</div>
                   </div>
 
                   {/* Table Rows: Rounded Pill Container for each item */}
@@ -1036,24 +1038,24 @@ export default function AdminBilling({
                     {(selectedInvoice.items || []).map((item, idx) => (
                       <div
                         key={item.id || idx}
-                        className="grid grid-cols-12 items-center px-6 py-4 rounded-2xl bg-[#140b0b] hover:bg-[#1f1010] border border-red-950/40 text-xs transition-colors"
+                        className="grid grid-cols-12 items-center px-6 py-4 rounded-2xl bg-[#F8F9FA] hover:bg-[#F1F3F5] border border-neutral-200/90 text-xs transition-colors"
                       >
-                        <div className="col-span-1 text-center font-mono font-bold text-[#FF4D00]">
+                        <div className="col-span-1 text-center font-mono font-bold text-[#D60000]">
                           {String(idx + 1).padStart(2, '0')}.
                         </div>
                         <div className="col-span-6 pl-2 space-y-0.5">
-                          <p className="font-bold text-white text-sm">{item.description}</p>
-                          <p className="text-[11px] text-[#A3A3A3]">
+                          <p className="font-bold text-black text-sm">{item.description}</p>
+                          <p className="text-[11px] text-neutral-500">
                             {item.category ? `${item.category} Deliverables` : 'Executive Brand Architecture Deliverables'}
                           </p>
                         </div>
-                        <div className="col-span-2 text-right font-mono text-white/90 font-medium">
+                        <div className="col-span-2 text-right font-mono text-neutral-800 font-semibold">
                           {formatCurrency(item.rate, selectedInvoice.currency)}
                         </div>
-                        <div className="col-span-1 text-center font-mono text-white/80">
+                        <div className="col-span-1 text-center font-mono text-neutral-700 font-medium">
                           {item.quantity}
                         </div>
-                        <div className="col-span-2 text-right font-mono font-extrabold text-white text-sm">
+                        <div className="col-span-2 text-right font-mono font-black text-[#D60000] text-sm">
                           {formatCurrency(item.amount, selectedInvoice.currency)}
                         </div>
                       </div>
@@ -1061,42 +1063,72 @@ export default function AdminBilling({
                   </div>
                 </div>
 
-                {/* Bottom Section: Left (Thanks, Payment, Terms) & Right (Totals & Signature) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-red-950/50">
+                {/* Bottom Section: Left (Thanks, Google Pay QR, Bank Details) & Right (Totals & Signature) */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-6 border-t border-neutral-200">
                   {/* Left Column */}
                   <div className="space-y-6">
                     {/* Thank You & Contacts */}
                     <div className="space-y-2">
-                      <h3 className="text-lg font-black text-white tracking-tight">
+                      <h3 className="text-xl font-black text-black tracking-tight">
                         Thank you for your business
                       </h3>
-                      <div className="flex flex-wrap items-center gap-4 text-xs text-[#A3A3A3]">
-                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
-                          <Phone className="w-3.5 h-3.5 text-[#FF4D00]" />
-                          <span>{selectedInvoice.clientPhone || '(+971) 4 398 2210'}</span>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-neutral-700">
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Phone className="w-3.5 h-3.5 text-[#D60000]" />
+                          <span className="font-mono text-black font-semibold">+91 9544931226</span>
                         </span>
-                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
-                          <Mail className="w-3.5 h-3.5 text-[#FF4D00]" />
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Mail className="w-3.5 h-3.5 text-[#D60000]" />
                           <span>billing@sktbranding.com</span>
                         </span>
-                        <span className="flex items-center gap-1.5 hover:text-white transition-colors">
-                          <Globe className="w-3.5 h-3.5 text-[#FF4D00]" />
+                        <span className="flex items-center gap-1.5 font-medium">
+                          <Globe className="w-3.5 h-3.5 text-[#D60000]" />
                           <span>www.sktbranding.com</span>
                         </span>
                       </div>
                     </div>
 
-                    {/* Payment Method */}
-                    <div className="p-4 rounded-2xl bg-[#120a0a] border border-red-950/40 space-y-2">
-                      <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-[#FF4D00] block">
-                        PAYMENT METHOD
+                    {/* Google Pay QR Code & UPI Instant Pay Box */}
+                    <div className="p-4 rounded-2xl bg-[#FFF5F5] border border-red-200/90 shadow-sm flex flex-col sm:flex-row items-center gap-4">
+                      {/* QR Code Container */}
+                      <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-xl overflow-hidden bg-white p-1.5 border border-red-200 shadow-sm flex-shrink-0 flex items-center justify-center">
+                        <img
+                          src="/images/gpay-qr.jpg"
+                          alt="Google Pay QR Code"
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+
+                      {/* GPay Details & UPI Number */}
+                      <div className="space-y-1.5 text-center sm:text-left flex-1">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-100 text-[#D60000] text-[10px] font-mono font-bold uppercase tracking-wider">
+                          Google Pay / UPI Instant Pay
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-neutral-500 font-mono font-bold uppercase tracking-wider">
+                            GPAY NUMBER / PHONE
+                          </p>
+                          <p className="text-base sm:text-lg font-black font-mono text-black tracking-tight">
+                            +91 9544931226
+                          </p>
+                        </div>
+                        <p className="text-[11px] text-neutral-600 leading-tight">
+                          Scan with <strong>Google Pay</strong>, <strong>PhonePe</strong>, <strong>Paytm</strong> or any UPI App to pay.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Payment Method: Bank Transfer / SWIFT */}
+                    <div className="p-4 rounded-2xl bg-[#F8F9FA] border border-neutral-200 space-y-2">
+                      <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-[#D60000] block">
+                        PAYMENT METHOD (BANK WIRE / SWIFT)
                       </span>
-                      <div className="text-xs text-white/85 space-y-1 font-mono">
-                        <p><strong className="text-white">Bank Account:</strong> SKT BRANDING LTD</p>
-                        <p><strong className="text-white">Bank Full Name:</strong> Barclays International / Emirates NBD</p>
-                        <p><strong className="text-white">Bank Code / SWIFT:</strong> BARCGB22 / EBILAEAD</p>
+                      <div className="text-xs text-neutral-800 space-y-1 font-mono">
+                        <p><strong className="text-black">Bank Account:</strong> SKT BRANDING LTD</p>
+                        <p><strong className="text-black">Bank Full Name:</strong> Barclays International / Emirates NBD</p>
+                        <p><strong className="text-black">Bank Code / SWIFT:</strong> BARCGB22 / EBILAEAD</p>
                         {selectedInvoice.paymentDetails && (
-                          <p className="text-[11px] text-[#A3A3A3] pt-1 whitespace-pre-line border-t border-white/5">
+                          <p className="text-[11px] text-neutral-600 pt-1 whitespace-pre-line border-t border-neutral-200">
                             {selectedInvoice.paymentDetails}
                           </p>
                         )}
@@ -1104,11 +1136,11 @@ export default function AdminBilling({
                     </div>
 
                     {/* Terms & Conditions */}
-                    <div className="space-y-1 text-xs text-[#737373]">
-                      <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-[#A3A3A3] block">
+                    <div className="space-y-1 text-xs">
+                      <span className="text-[10px] font-mono uppercase font-bold tracking-widest text-neutral-500 block">
                         TERMS & CONDITIONS
                       </span>
-                      <p className="text-[11px] text-[#8c8c8c] leading-relaxed whitespace-pre-line">
+                      <p className="text-[11px] text-neutral-600 leading-relaxed whitespace-pre-line">
                         {selectedInvoice.notes ||
                           'Payment is due upon receipt or within stated terms. All intellectual property, vector files, and master brand assets are formally assigned to client upon full settlement.'}
                       </p>
@@ -1116,49 +1148,49 @@ export default function AdminBilling({
                   </div>
 
                   {/* Right Column: Financial Totals & Signature */}
-                  <div className="space-y-4 md:pl-6 md:border-l md:border-red-950/40">
+                  <div className="space-y-4 md:pl-6 md:border-l md:border-neutral-200 flex flex-col justify-between">
                     <div className="space-y-2 text-xs font-mono">
-                      <div className="flex justify-between items-center text-[#A3A3A3] px-2">
-                        <span>Sub total</span>
+                      <div className="flex justify-between items-center text-neutral-600 px-2">
+                        <span className="font-medium">Sub total</span>
                         <span>:</span>
-                        <span className="text-white font-medium">
+                        <span className="text-black font-bold">
                           {formatCurrency(selectedInvoice.subtotal, selectedInvoice.currency)}
                         </span>
                       </div>
 
                       {selectedInvoice.taxRate > 0 && (
-                        <div className="flex justify-between items-center text-[#A3A3A3] px-2">
-                          <span>Tax ({selectedInvoice.taxRate}%)</span>
+                        <div className="flex justify-between items-center text-neutral-600 px-2">
+                          <span className="font-medium">Tax ({selectedInvoice.taxRate}%)</span>
                           <span>:</span>
-                          <span className="text-white font-medium">
+                          <span className="text-black font-bold">
                             +{formatCurrency(selectedInvoice.taxAmount, selectedInvoice.currency)}
                           </span>
                         </div>
                       )}
 
                       {selectedInvoice.discountRate > 0 && (
-                        <div className="flex justify-between items-center text-[#A3A3A3] px-2">
-                          <span>Discount ({selectedInvoice.discountRate}%)</span>
+                        <div className="flex justify-between items-center text-neutral-600 px-2">
+                          <span className="font-medium">Discount ({selectedInvoice.discountRate}%)</span>
                           <span>:</span>
-                          <span className="text-emerald-400 font-medium">
+                          <span className="text-emerald-600 font-bold">
                             -{formatCurrency(selectedInvoice.discountAmount, selectedInvoice.currency)}
                           </span>
                         </div>
                       )}
 
-                      {/* Vibrant Red-to-Dark Red Gradient Total Pill (Exactly matching reference!) */}
-                      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FF2A00] via-[#D60000] to-[#7A0000] text-white flex items-center justify-between font-black text-sm sm:text-base shadow-[0_0_25px_rgba(255,42,0,0.35)] mt-3">
-                        <span className="uppercase tracking-wider">Total</span>
-                        <span className="text-white/60 font-mono">:</span>
-                        <span className="font-mono tracking-tight text-lg sm:text-xl">
+                      {/* Vibrant Red Gradient Total Pill */}
+                      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#FF2A00] via-[#D60000] to-[#A30000] text-white flex items-center justify-between font-black text-sm sm:text-base shadow-[0_4px_20px_rgba(214,0,0,0.35)] mt-3">
+                        <span className="uppercase tracking-wider">TOTAL</span>
+                        <span className="text-white/70 font-mono">:</span>
+                        <span className="font-mono tracking-tight text-lg sm:text-xl font-black">
                           {formatCurrency(selectedInvoice.total, selectedInvoice.currency)}
                         </span>
                       </div>
 
                       {/* Amount Paid & Balance Due if applicable */}
                       {selectedInvoice.amountPaid > 0 && (
-                        <div className="flex justify-between items-center text-xs text-emerald-400 px-2 pt-1 font-mono">
-                          <span>Amount Paid</span>
+                        <div className="flex justify-between items-center text-xs text-emerald-700 px-2 pt-1 font-mono">
+                          <span className="font-medium">Amount Paid</span>
                           <span>:</span>
                           <span className="font-bold">
                             {formatCurrency(selectedInvoice.amountPaid, selectedInvoice.currency)}
@@ -1167,11 +1199,11 @@ export default function AdminBilling({
                       )}
 
                       <div className="flex justify-between items-center text-xs px-2 pt-1 font-mono">
-                        <span className="text-[#A3A3A3]">Balance Due</span>
-                        <span className="text-[#A3A3A3]">:</span>
+                        <span className="text-neutral-600 font-medium">Balance Due</span>
+                        <span className="text-neutral-500">:</span>
                         <span
-                          className={`font-bold ${
-                            selectedInvoice.balanceDue <= 0 ? 'text-emerald-400' : 'text-amber-400'
+                          className={`font-black ${
+                            selectedInvoice.balanceDue <= 0 ? 'text-emerald-600' : 'text-[#D60000]'
                           }`}
                         >
                           {formatCurrency(selectedInvoice.balanceDue, selectedInvoice.currency)}
@@ -1181,15 +1213,15 @@ export default function AdminBilling({
 
                     {/* Signature Block (Matching reference design!) */}
                     <div className="pt-6 text-center md:text-right space-y-1">
-                      <p className="text-sm font-bold text-white tracking-wide">
+                      <p className="text-sm font-bold text-black tracking-wide">
                         Steven Joe
                       </p>
-                      <p className="text-[11px] font-mono uppercase tracking-widest text-[#A3A3A3]">
+                      <p className="text-[11px] font-mono uppercase tracking-widest text-neutral-500">
                         Accounting Manager
                       </p>
                       <div className="flex justify-center md:justify-end pt-1">
                         <svg
-                          className="w-36 h-12 text-[#FF4D00] filter drop-shadow-[0_0_8px_rgba(255,77,0,0.4)]"
+                          className="w-36 h-12 text-[#D60000]"
                           viewBox="0 0 160 50"
                           fill="none"
                           stroke="currentColor"

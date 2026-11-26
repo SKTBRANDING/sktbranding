@@ -211,8 +211,8 @@ export default function DesignerDashboard({
       const q = textSearch.toLowerCase();
       list = list.filter(
         (t) =>
-          t.title.toLowerCase().includes(q) ||
-          t.client.toLowerCase().includes(q) ||
+          (t.title || '').toLowerCase().includes(q) ||
+          (t.client || '').toLowerCase().includes(q) ||
           (t.category && t.category.toLowerCase().includes(q)) ||
           (t.deliverables && t.deliverables.toLowerCase().includes(q)) ||
           (t.brief && t.brief.toLowerCase().includes(q))

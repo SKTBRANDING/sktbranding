@@ -268,11 +268,15 @@ export default function AdminDesigners({
 
   // Filtered designers
   const filteredDesigners = (designers || []).filter((d) => {
+    const q = (search || '').toLowerCase().trim();
     const matchesSearch =
-      d.name.toLowerCase().includes(search.toLowerCase()) ||
-      d.email.toLowerCase().includes(search.toLowerCase()) ||
-      d.specialty.toLowerCase().includes(search.toLowerCase()) ||
-      d.token.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      (d.name || '').toLowerCase().includes(q) ||
+      (d.email || '').toLowerCase().includes(q) ||
+      (d.specialty || '').toLowerCase().includes(q) ||
+      (d.token || '').toLowerCase().includes(q) ||
+      (d.companyCode || '').toLowerCase().includes(q) ||
+      (d.phone || '').toLowerCase().includes(q);
 
     const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
     return matchesSearch && matchesStatus;

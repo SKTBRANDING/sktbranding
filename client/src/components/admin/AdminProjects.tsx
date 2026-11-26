@@ -364,10 +364,12 @@ export default function AdminProjects({ projects, onRefresh, showToast }: AdminP
   };
 
   // Filter projects list
-  const filtered = projects.filter((p) => {
+  const filtered = (projects || []).filter((p) => {
+    const q = (search || '').toLowerCase().trim();
     const matchesSearch =
-      p.title.toLowerCase().includes(search.toLowerCase()) ||
-      p.client.toLowerCase().includes(search.toLowerCase());
+      !q ||
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.client || '').toLowerCase().includes(q);
     const matchesCat = filterCategory === 'All' || p.category === filterCategory;
     return matchesSearch && matchesCat;
   });
