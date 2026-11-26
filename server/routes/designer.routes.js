@@ -389,12 +389,6 @@ router.post(['/:id/token', '/:id/regenerate-token'], requireAdmin, async (req, r
     return res.status(500).json({ error: err.message });
   }
 });
-      designer: updatedDesigner,
-    });
-  } catch (err) {
-    return res.status(500).json({ error: err.message });
-  }
-});
 
 // ==========================================
 // DELETE /api/designers/:id
