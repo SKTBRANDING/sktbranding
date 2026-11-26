@@ -392,6 +392,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
           {activeTab === 'designers' && (
             <AdminDesigners
               designers={data.designers || []}
+              tasks={data.tasks || []}
               onRefresh={refreshData}
               showToast={showToast}
               onAssignWork={(id) => handleOpenUploadAndAssignTask(id)}

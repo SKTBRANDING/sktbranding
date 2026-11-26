@@ -20,6 +20,7 @@ const SettingSchema = new mongoose.Schema(
     },
     seoTitle: { type: String, default: 'SKT Branding | International Brand Architecture & Design' },
     seoDescription: { type: String, default: 'Award-winning branding agency specializing in visual identity, packaging architecture, and digital aesthetics.' },
+    adminPassword: { type: String, default: '' },
   },
   {
     timestamps: true,

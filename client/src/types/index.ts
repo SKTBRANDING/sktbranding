@@ -157,6 +157,7 @@ export interface AgencySettings {
   };
   seoTitle: string;
   seoDescription: string;
+  adminPassword?: string;
 }
 
 export interface Designer {

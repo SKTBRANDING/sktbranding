@@ -231,13 +231,13 @@ router.get('/', requireAdmin, async (req, res) => {
 // ==========================================
 router.post('/', requireAdmin, async (req, res) => {
   try {
-    const { name, email, specialty = 'Brand Designer', avatar = '', notes = '' } = req.body;
+    const { name, email, specialty = 'Brand Designer', avatar = '', notes = '', token: customToken, password } = req.body;
 
     if (!name || !email) {
       return res.status(400).json({ error: 'Designer name and email are required.' });
     }
 
-    const token = generateDesignerToken(name);
+    const token = (customToken || password)?.trim() || generateDesignerToken(name);
     const newDesignerData = {
       id: `des-${crypto.randomUUID().slice(0, 8)}`,
       name: name.trim(),
@@ -279,11 +279,12 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // ==========================================
-// PUT /api/designers/:id (Edit Designer Profile / Status)
+// PUT /api/designers/:id (Edit Designer Profile / Status / Password)
 // ==========================================
 router.put('/:id', requireAdmin, async (req, res) => {
   try {
-    const { name, email, specialty, avatar, status, notes } = req.body;
+    const { name, email, specialty, avatar, status, notes, token, password } = req.body;
+    const effectiveToken = (token || password)?.trim();
 
     if (isMongoConnected()) {
       try {
@@ -295,6 +296,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
           if (avatar !== undefined) designer.avatar = avatar.trim();
           if (status !== undefined) designer.status = status;
           if (notes !== undefined) designer.notes = notes.trim();
+          if (effectiveToken) designer.token = effectiveToken;
           await designer.save();
           return res.json(designer);
         }
@@ -316,6 +318,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
           ...(avatar !== undefined && { avatar: avatar.trim() }),
           ...(status !== undefined && { status }),
           ...(notes !== undefined && { notes: notes.trim() }),
+          ...(effectiveToken && { token: effectiveToken }),
         };
         updatedDesigner = db.designers[idx];
       }
@@ -332,22 +335,24 @@ router.put('/:id', requireAdmin, async (req, res) => {
 });
 
 // ==========================================
-// POST /api/designers/:id/token & /api/designers/:id/regenerate-token
+// POST /api/designers/:id/token (Customize or Regenerate Password / Token)
 // ==========================================
 router.post(['/:id/token', '/:id/regenerate-token'], requireAdmin, async (req, res) => {
   try {
     const id = req.params.id;
+    const { customToken, token, password } = req.body;
+    const requestedToken = (customToken || token || password)?.trim();
 
     if (isMongoConnected()) {
       try {
         const designer = await Designer.findOne({ id });
         if (designer) {
-          designer.token = generateDesignerToken(designer.name);
+          designer.token = requestedToken || generateDesignerToken(designer.name);
           designer.status = 'active';
           await designer.save();
           return res.json({
             success: true,
-            message: 'Access link regenerated successfully.',
+            message: requestedToken ? 'Designer access password customized successfully.' : 'Access link regenerated successfully.',
             token: designer.token,
             designer,
           });
@@ -362,7 +367,7 @@ router.post(['/:id/token', '/:id/regenerate-token'], requireAdmin, async (req, r
       if (!Array.isArray(db.designers)) db.designers = [];
       const idx = db.designers.findIndex((d) => d.id === id);
       if (idx !== -1) {
-        const newToken = generateDesignerToken(db.designers[idx].name);
+        const newToken = requestedToken || generateDesignerToken(db.designers[idx].name);
         db.designers[idx].token = newToken;
         db.designers[idx].status = 'active';
         updatedDesigner = db.designers[idx];
@@ -376,8 +381,14 @@ router.post(['/:id/token', '/:id/regenerate-token'], requireAdmin, async (req, r
 
     return res.json({
       success: true,
-      message: 'Access link regenerated successfully.',
+      message: requestedToken ? 'Designer access password customized successfully.' : 'Access link regenerated successfully.',
       token: updatedDesigner.token,
+      designer: updatedDesigner,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
       designer: updatedDesigner,
     });
   } catch (err) {

@@ -5,6 +5,29 @@ const { isMongoConnected, findDesignerFromMemory } = require('../utils/dbFallbac
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 const JWT_SECRET = process.env.JWT_SECRET || 'skt_luxury_branding_jwt_secret_key_2026';
 
+// Helper to retrieve effective admin password (database customization -> env fallback)
+async function getAdminPassword() {
+  try {
+    if (isMongoConnected()) {
+      const Setting = require('../models/Setting');
+      const setting = await Setting.findOne();
+      if (setting && setting.adminPassword && setting.adminPassword.trim()) {
+        return setting.adminPassword.trim();
+      }
+    }
+  } catch {}
+
+  try {
+    const { getJsonDb } = require('../utils/dbFallback');
+    const db = getJsonDb();
+    if (db.settings && db.settings.adminPassword && db.settings.adminPassword.trim()) {
+      return db.settings.adminPassword.trim();
+    }
+  } catch {}
+
+  return ADMIN_PASSWORD;
+}
+
 // Verify Admin Credentials (Cookie or Authorization Bearer header)
 async function requireAdmin(req, res, next) {
   try {
@@ -22,8 +45,14 @@ async function requireAdmin(req, res, next) {
       return res.status(401).json({ error: 'Unauthorized. Admin credentials required.' });
     }
 
+    const currentAdminPassword = await getAdminPassword();
+
     // Direct password match or JWT token
-    if (token === ADMIN_PASSWORD || token === 'admin_authenticated_session') {
+    if (
+      token === currentAdminPassword ||
+      token === ADMIN_PASSWORD ||
+      token === 'admin_authenticated_session'
+    ) {
       req.isAdmin = true;
       return next();
     }
@@ -149,6 +178,7 @@ module.exports = {
   requireAdmin,
   requireDesigner,
   requireAnyAuth,
+  getAdminPassword,
   ADMIN_PASSWORD,
   JWT_SECRET,
 };

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Briefcase,
   Layers,
@@ -24,8 +24,12 @@ import {
   RefreshCw,
   Copy,
   Mic,
+  Search,
+  Filter,
+  CalendarDays,
+  TrendingUp,
 } from 'lucide-react';
-import { Designer, Task, TaskAttachment } from '@/types';
+import { Designer, Task, TaskAttachment, TaskSubmission } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
 import FileAttachmentCard from '@/components/ui/FileAttachmentCard';
 import RevisionTimeline from '@/components/ui/RevisionTimeline';
@@ -39,6 +43,15 @@ interface DesignerDashboardProps {
   onRefreshTasks: () => Promise<void>;
 }
 
+type TabType =
+  | 'pending'
+  | 'daily'
+  | 'my_works'
+  | 'revisions'
+  | 'submitted'
+  | 'available'
+  | 'completed';
+
 export default function DesignerDashboard({
   designer,
   initialTasks,
@@ -47,8 +60,12 @@ export default function DesignerDashboard({
   onRefreshTasks,
 }: DesignerDashboardProps) {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
-  const [activeTab, setActiveTab] = useState<'available' | 'my_works' | 'submitted' | 'revisions' | 'completed'>('available');
+  const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+
+  // Search & Date filter state
+  const [dateSearch, setDateSearch] = useState<string>('');
+  const [textSearch, setTextSearch] = useState<string>('');
 
   // Claiming loading state
   const [claimingTaskId, setClaimingTaskId] = useState<string | null>(null);
@@ -63,21 +80,7 @@ export default function DesignerDashboard({
   const [copiedText, setCopiedText] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleCopyText = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(true);
-    showToast('Design copy & text contents copied to clipboard!');
-    setTimeout(() => setCopiedText(false), 2500);
-  };
-
-  // Categorize tasks for tabs
-  const availableTasks = tasks.filter((t) => t.status === 'available');
-  const myActiveTasks = tasks.filter((t) => (t.status === 'assigned' || t.status === 'in_progress') && t.assignedDesignerId === designer.id);
-  const submittedTasks = tasks.filter((t) => (t.status === 'submitted' || t.status === 'resubmitted') && t.assignedDesignerId === designer.id);
-  const revisionTasks = tasks.filter((t) => t.status === 'revision_requested' && t.assignedDesignerId === designer.id);
-  const completedTasks = tasks.filter((t) => t.status === 'completed' && t.assignedDesignerId === designer.id);
-
-  // Keep tasks synced if initialTasks prop changes
+  // Sync initialTasks
   React.useEffect(() => {
     setTasks(initialTasks);
     if (selectedTask) {
@@ -86,10 +89,159 @@ export default function DesignerDashboard({
     }
   }, [initialTasks]);
 
+  const handleCopyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(true);
+    showToast('Design copy & text contents copied to clipboard!');
+    setTimeout(() => setCopiedText(false), 2500);
+  };
+
+  // Date constants
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const yesterdayDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const yesterdayStr = yesterdayDate.toISOString().slice(0, 10);
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+  // All tasks assigned to this designer
+  const myAssignedTasks = useMemo(() => {
+    return tasks.filter(
+      (t) => t.assignedDesignerId === designer.id || t.assignedDesignerName === designer.name
+    );
+  }, [tasks, designer]);
+
+  // Designer personal productivity metrics (Submissions total by daily, weekly, monthly)
+  const submissionMetrics = useMemo(() => {
+    let today = 0;
+    let thisWeek = 0;
+    let thisMonth = 0;
+    let total = 0;
+
+    myAssignedTasks.forEach((t) => {
+      (t.submissions || []).forEach((sub) => {
+        if (!sub.submittedAt) return;
+        const subDate = new Date(sub.submittedAt);
+        const subDayStr = sub.submittedAt.slice(0, 10);
+        total++;
+        if (subDayStr === todayStr) today++;
+        if (subDate >= sevenDaysAgo) thisWeek++;
+        if (subDate >= startOfMonth) thisMonth++;
+      });
+    });
+
+    return { today, thisWeek, thisMonth, total };
+  }, [myAssignedTasks, todayStr, sevenDaysAgo, startOfMonth]);
+
+  // Tasks categorized
+  const availableTasks = useMemo(() => tasks.filter((t) => t.status === 'available'), [tasks]);
+
+  const pendingTasks = useMemo(
+    () =>
+      myAssignedTasks.filter(
+        (t) =>
+          t.status === 'assigned' ||
+          t.status === 'in_progress' ||
+          t.status === 'revision_requested' ||
+          t.status === 'submitted' ||
+          t.status === 'resubmitted'
+      ),
+    [myAssignedTasks]
+  );
+
+  const dailyAssignedTasks = useMemo(() => {
+    const targetDate = dateSearch || todayStr;
+    return myAssignedTasks.filter((t) => {
+      const assignedDate = t.assignedAt ? t.assignedAt.slice(0, 10) : t.createdAt?.slice(0, 10);
+      return assignedDate === targetDate;
+    });
+  }, [myAssignedTasks, dateSearch, todayStr]);
+
+  const myActiveTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'assigned' || t.status === 'in_progress'),
+    [myAssignedTasks]
+  );
+
+  const revisionTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'revision_requested'),
+    [myAssignedTasks]
+  );
+
+  const submittedTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'submitted' || t.status === 'resubmitted'),
+    [myAssignedTasks]
+  );
+
+  const completedTasks = useMemo(
+    () => myAssignedTasks.filter((t) => t.status === 'completed'),
+    [myAssignedTasks]
+  );
+
+  // Filter tasks based on activeTab, dateSearch, and textSearch
+  const displayedTasks = useMemo(() => {
+    let list: Task[] = [];
+    if (activeTab === 'pending') {
+      list = pendingTasks;
+    } else if (activeTab === 'daily') {
+      list = dailyAssignedTasks;
+    } else if (activeTab === 'my_works') {
+      list = myActiveTasks;
+    } else if (activeTab === 'revisions') {
+      list = revisionTasks;
+    } else if (activeTab === 'submitted') {
+      list = submittedTasks;
+    } else if (activeTab === 'available') {
+      list = availableTasks;
+    } else {
+      list = completedTasks;
+    }
+
+    // Apply dateSearch if active and not already daily tab
+    if (dateSearch && activeTab !== 'daily') {
+      list = list.filter((t) => {
+        const assignedDate = t.assignedAt ? t.assignedAt.slice(0, 10) : t.createdAt?.slice(0, 10);
+        const deadlineDate = t.deadline ? t.deadline.slice(0, 10) : '';
+        const submissionOnDate = (t.submissions || []).some(
+          (s) => s.submittedAt && s.submittedAt.slice(0, 10) === dateSearch
+        );
+        return assignedDate === dateSearch || deadlineDate === dateSearch || submissionOnDate;
+      });
+    }
+
+    // Apply textSearch
+    if (textSearch.trim()) {
+      const q = textSearch.toLowerCase();
+      list = list.filter(
+        (t) =>
+          t.title.toLowerCase().includes(q) ||
+          t.client.toLowerCase().includes(q) ||
+          (t.category && t.category.toLowerCase().includes(q)) ||
+          (t.deliverables && t.deliverables.toLowerCase().includes(q)) ||
+          (t.brief && t.brief.toLowerCase().includes(q))
+      );
+    }
+
+    return list;
+  }, [
+    activeTab,
+    pendingTasks,
+    dailyAssignedTasks,
+    myActiveTasks,
+    revisionTasks,
+    submittedTasks,
+    availableTasks,
+    completedTasks,
+    dateSearch,
+    textSearch,
+  ]);
+
   const handleTakeWork = async (task: Task) => {
     setClaimingTaskId(task.id);
     try {
-      const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+      const token =
+        designer.token ||
+        (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') ||
+        '';
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-designer-token'] = token;
 
@@ -103,9 +255,9 @@ export default function DesignerDashboard({
         throw new Error(data.error || 'Failed to claim task');
       }
 
-      showToast(`Work claimed! "${task.title}" has been moved to your active tasks.`);
+      showToast(`Work claimed! "${task.title}" has been moved to your pending tasks.`);
       await onRefreshTasks();
-      setActiveTab('my_works');
+      setActiveTab('pending');
     } catch (err: any) {
       showToast(err.message, 'error');
       await onRefreshTasks();
@@ -116,7 +268,10 @@ export default function DesignerDashboard({
 
   const handleStartWork = async (task: Task) => {
     try {
-      const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+      const token =
+        designer.token ||
+        (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') ||
+        '';
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-designer-token'] = token;
 
@@ -137,124 +292,63 @@ export default function DesignerDashboard({
   const handleUploadDeliverables = async (files: FileList | File[] | null) => {
     if (!files || files.length === 0) return;
     setUploadingFiles(true);
-    const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+    const token =
+      designer.token ||
+      (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') ||
+      '';
     const newUploads: TaskAttachment[] = [];
     let lastError = '';
 
     const getCategory = (filename = '', mimetype = ''): TaskAttachment['category'] => {
       const ext = filename.split('.').pop()?.toLowerCase() || '';
-      if (['obj', 'fbx', 'glb', 'gltf', 'blend', 'c4d', '3ds', 'stl', 'dae', 'step', 'stp'].includes(ext)) return 'model';
-      if (['mp3', 'wav', 'm4a', 'ogg', 'aac', 'webm'].includes(ext) || mimetype.includes('audio')) return 'audio';
-      if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext) || mimetype.includes('image')) return 'image';
+      if (['obj', 'fbx', 'glb', 'gltf', 'blend', 'c4d', '3ds', 'stl', 'dae', 'step', 'stp'].includes(ext))
+        return 'model';
+      if (['mp3', 'wav', 'm4a', 'ogg', 'aac', 'webm'].includes(ext) || mimetype.includes('audio'))
+        return 'audio';
+      if (['jpg', 'jpeg', 'png', 'webp', 'gif', 'svg'].includes(ext) || mimetype.includes('image'))
+        return 'image';
       if (ext === 'pdf' || mimetype.includes('pdf')) return 'pdf';
       if (['zip', 'rar', '7z', 'tar', 'gz'].includes(ext)) return 'archive';
-      if (['mp4', 'mov', 'avi', 'mkv'].includes(ext) || mimetype.includes('video')) return 'video';
-      if (['psd', 'ai', 'eps', 'indd', 'fig', 'sketch'].includes(ext)) return 'design';
-      return 'doc';
-    };
-
-    const convertToDataUrl = (f: File): Promise<string> => {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(f);
-      });
+      return 'document';
     };
 
     try {
-      const fileArray = Array.from(files);
-      for (const file of fileArray) {
-        let uploadedItem: TaskAttachment | null = null;
+      const fileList = Array.from(files);
+      for (const file of fileList) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('category', getCategory(file.name, file.type));
 
-        // 1. Primary endpoint: /api/tasks/upload
-        try {
-          const data = new FormData();
-          data.append('file', file);
-          const headers: Record<string, string> = {};
-          if (token) headers['x-designer-token'] = token;
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: token ? { 'x-designer-token': token } : {},
+          body: formData,
+        });
 
-          const res = await fetch('/api/tasks/upload', {
-            method: 'POST',
-            headers,
-            credentials: 'include',
-            body: data,
+        const data = await res.json();
+        if (res.ok && data.url) {
+          newUploads.push({
+            id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+            name: file.name,
+            url: data.url,
+            size: file.size,
+            mimeType: file.type || 'application/octet-stream',
+            category: getCategory(file.name, file.type),
+            uploadedAt: new Date().toISOString(),
           });
-
-          if (res.ok) {
-            const json = await res.json();
-            if (json && json.url) {
-              uploadedItem = json;
-            }
-          } else {
-            const errJson = await res.json().catch(() => null);
-            lastError = errJson?.error || `Upload HTTP error ${res.status}`;
-          }
-        } catch (taskErr: any) {
-          lastError = taskErr.message || 'Network error on task upload';
-        }
-
-        // 2. Secondary fallback endpoint: /api/upload
-        if (!uploadedItem) {
-          try {
-            const data = new FormData();
-            data.append('file', file);
-            const res = await fetch('/api/upload', {
-              method: 'POST',
-              credentials: 'include',
-              body: data,
-            });
-
-            if (res.ok) {
-              const json = await res.json();
-              if (json && json.url) {
-                uploadedItem = {
-                  id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-                  name: json.name || file.name,
-                  url: json.url,
-                  size: json.size || file.size,
-                  type: file.type || file.name.split('.').pop() || 'unknown',
-                  uploadedAt: new Date().toISOString(),
-                  category: getCategory(file.name, file.type),
-                };
-              }
-            }
-          } catch (genErr) {
-            console.warn('[Upload Fallback] /api/upload failed:', genErr);
-          }
-        }
-
-        // 3. Guaranteed client-side FileReader Base64 Data URL fallback
-        if (!uploadedItem) {
-          try {
-            const dataUrl = await convertToDataUrl(file);
-            uploadedItem = {
-              id: `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              name: file.name,
-              url: dataUrl,
-              size: file.size,
-              type: file.type || file.name.split('.').pop() || 'unknown',
-              uploadedAt: new Date().toISOString(),
-              category: getCategory(file.name, file.type),
-            };
-          } catch (readerErr: any) {
-            lastError = readerErr.message || `Could not parse ${file.name}`;
-          }
-        }
-
-        if (uploadedItem) {
-          newUploads.push(uploadedItem);
+        } else {
+          lastError = data.error || 'Upload error';
         }
       }
 
       if (newUploads.length > 0) {
         setUploadedFiles((prev) => [...prev, ...newUploads]);
-        showToast(`${newUploads.length} deliverable file(s) attached successfully!`);
+        showToast(`Attached ${newUploads.length} deliverable file(s).`);
       } else if (lastError) {
-        showToast(lastError, 'error');
+        showToast(`Failed to upload: ${lastError}`, 'error');
       }
     } catch (err: any) {
-      showToast(err.message || 'Failed to upload files', 'error');
+      showToast(err.message || 'File upload failed', 'error');
     } finally {
       setUploadingFiles(false);
     }
@@ -279,7 +373,10 @@ export default function DesignerDashboard({
 
     setSubmittingWork(true);
     try {
-      const token = designer.token || (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') || '';
+      const token =
+        designer.token ||
+        (typeof window !== 'undefined' ? localStorage.getItem('skt_designer_token') : '') ||
+        '';
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-designer-token'] = token;
 
@@ -319,7 +416,7 @@ export default function DesignerDashboard({
           <div>
             <span className="text-sm font-bold tracking-wider text-white">SKT BRANDING</span>
             <span className="text-[10px] text-[#FF4D00] block tracking-widest uppercase -mt-0.5 font-mono">
-              Designer Studio
+              Designer Studio Workspace
             </span>
           </div>
         </div>
@@ -341,7 +438,9 @@ export default function DesignerDashboard({
             )}
             <div className="text-left hidden sm:block">
               <span className="text-xs font-bold text-white block leading-tight">{designer.name}</span>
-              <span className="text-[9px] text-[#A3A3A3] block uppercase tracking-wider">{designer.specialty}</span>
+              <span className="text-[9px] text-[#A3A3A3] block uppercase tracking-wider">
+                {designer.specialty}
+              </span>
             </div>
           </div>
 
@@ -360,70 +459,265 @@ export default function DesignerDashboard({
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 sm:p-6 lg:p-8 space-y-6">
         {/* Welcome Banner */}
         <div className="luxury-card rounded-3xl p-6 border border-white/10 relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div 
+          <div
             aria-hidden="true"
-            className="absolute -right-20 -top-20 w-80 h-80 bg-[#FF4D00]/10 rounded-full blur-[100px] pointer-events-none" 
+            className="absolute -right-20 -top-20 w-80 h-80 bg-[#FF4D00]/10 rounded-full blur-[100px] pointer-events-none"
           />
           <div className="space-y-1 relative z-10">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-semibold">
+                Designer Portal Online
+              </span>
+            </div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
               Welcome, <span className="text-[#FF4D00]">{designer.name}</span>
             </h1>
             <p className="text-xs text-[#A3A3A3] max-w-xl">
-              Claim available design briefs, submit work packages, read client feedback, and track all version iterations in real-time.
+              Track your pending works, review daily assigned briefs, submit high-resolution deliverables, and filter by any assignment date.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onRefreshTasks}
-            className="self-start sm:self-center px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-xs font-semibold text-white border border-white/10 flex items-center gap-1.5 transition-colors relative z-10"
+            className="self-start sm:self-center px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 text-xs font-semibold text-white border border-white/10 flex items-center gap-1.5 transition-colors relative z-10 shadow-sm"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Refresh Workspace</span>
           </button>
         </div>
 
+        {/* Designer Productivity & Submissions Analytics Bar */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* Pending Works */}
+          <div
+            onClick={() => setActiveTab('pending')}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              activeTab === 'pending'
+                ? 'bg-[#FF4D00]/15 border-[#FF4D00] shadow-[0_0_20px_rgba(255,77,0,0.25)]'
+                : 'bg-[#0a0a0a] border-white/10 hover:border-white/20'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Pending Works</span>
+              <Clock className="w-3.5 h-3.5 text-[#FF4D00]" />
+            </div>
+            <div className="text-2xl font-black text-white">{pendingTasks.length}</div>
+            <div className="text-[10px] text-[#FF4D00] mt-0.5">Action required</div>
+          </div>
+
+          {/* Daily Assigned (Today) */}
+          <div
+            onClick={() => {
+              setDateSearch(todayStr);
+              setActiveTab('daily');
+            }}
+            className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+              activeTab === 'daily'
+                ? 'bg-[#FF4D00]/15 border-[#FF4D00] shadow-[0_0_20px_rgba(255,77,0,0.25)]'
+                : 'bg-[#0a0a0a] border-white/10 hover:border-white/20'
+            }`}
+          >
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Today Assigned</span>
+              <Calendar className="w-3.5 h-3.5 text-blue-400" />
+            </div>
+            <div className="text-2xl font-black text-white">{dailyAssignedTasks.length}</div>
+            <div className="text-[10px] text-[#A3A3A3] mt-0.5">Assigned {todayStr}</div>
+          </div>
+
+          {/* Submitted Today */}
+          <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/10">
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Submitted Today</span>
+              <Send className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <div className="text-2xl font-black text-white">{submissionMetrics.today}</div>
+            <div className="text-[10px] text-emerald-400 mt-0.5">Daily submissions</div>
+          </div>
+
+          {/* Submitted This Week */}
+          <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/10">
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Weekly Submitted</span>
+              <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+            </div>
+            <div className="text-2xl font-black text-white">{submissionMetrics.thisWeek}</div>
+            <div className="text-[10px] text-[#A3A3A3] mt-0.5">Last 7 days</div>
+          </div>
+
+          {/* Submitted This Month */}
+          <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/10">
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">Monthly Submitted</span>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+            <div className="text-2xl font-black text-white">{submissionMetrics.thisMonth}</div>
+            <div className="text-[10px] text-[#A3A3A3] mt-0.5">Current month</div>
+          </div>
+
+          {/* Total Submissions All Time */}
+          <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/10">
+            <div className="flex items-center justify-between text-xs text-[#A3A3A3] mb-1">
+              <span className="font-semibold uppercase tracking-wider text-[10px]">All-Time Works</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-[#FF4D00]" />
+            </div>
+            <div className="text-2xl font-black text-white">{submissionMetrics.total}</div>
+            <div className="text-[10px] text-[#A3A3A3] mt-0.5">Total packages delivered</div>
+          </div>
+        </div>
+
+        {/* Date Search & Work Filtering Toolbar */}
+        <div className="p-4 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-3">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Date Search controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs uppercase font-bold text-[#A3A3A3] flex items-center gap-1.5 mr-1">
+                <CalendarDays className="w-4 h-4 text-[#FF4D00]" />
+                <span>Search Date:</span>
+              </span>
+
+              {/* Native Date Picker */}
+              <input
+                type="date"
+                value={dateSearch}
+                onChange={(e) => setDateSearch(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
+              />
+
+              {/* Quick Date Pills */}
+              <button
+                type="button"
+                onClick={() => setDateSearch('')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                  !dateSearch ? 'bg-white/15 text-white border border-white/20' : 'bg-[#141414] text-[#A3A3A3] hover:text-white'
+                }`}
+              >
+                All Dates
+              </button>
+              <button
+                type="button"
+                onClick={() => setDateSearch(todayStr)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                  dateSearch === todayStr ? 'bg-[#FF4D00] text-black font-bold' : 'bg-[#141414] text-[#A3A3A3] hover:text-white'
+                }`}
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setDateSearch(yesterdayStr)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                  dateSearch === yesterdayStr ? 'bg-[#FF4D00] text-black font-bold' : 'bg-[#141414] text-[#A3A3A3] hover:text-white'
+                }`}
+              >
+                Yesterday
+              </button>
+            </div>
+
+            {/* Keyword search input */}
+            <div className="relative min-w-[240px]">
+              <Search className="w-3.5 h-3.5 text-[#737373] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={textSearch}
+                onChange={(e) => setTextSearch(e.target.value)}
+                placeholder="Search by brief, client, title..."
+                className="w-full pl-8 pr-4 py-2 rounded-xl bg-[#141414] border border-white/10 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-[#FF4D00]"
+              />
+              {textSearch && (
+                <button
+                  type="button"
+                  onClick={() => setTextSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[#737373] hover:text-white"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Active Filter Notice */}
+          {(dateSearch || textSearch) && (
+            <div className="pt-2 border-t border-white/5 flex items-center justify-between text-xs">
+              <span className="text-[#A3A3A3] flex items-center gap-1.5">
+                <Filter className="w-3.5 h-3.5 text-[#FF4D00]" />
+                <span>
+                  Filtering {dateSearch ? `for date ` : ''}
+                  {dateSearch && <strong className="text-[#FF4D00] font-mono">{dateSearch}</strong>}
+                  {textSearch && ` matching "${textSearch}"`} • Showing {displayedTasks.length} work(s)
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDateSearch('');
+                  setTextSearch('');
+                }}
+                className="text-[11px] text-[#FF4D00] hover:underline font-bold"
+              >
+                Reset Filter
+              </button>
+            </div>
+          )}
+        </div>
+
         {/* Tab Navigation Bars */}
         <div className="flex flex-wrap items-center gap-2 border-b border-white/10 pb-3">
+          {/* 1. Pending Works Tab */}
           <button
             type="button"
-            onClick={() => setActiveTab('available')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'available'
+            onClick={() => setActiveTab('pending')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'pending'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
-            <span>Available Works</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'available' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'}`}>
-              {availableTasks.length}
+            <Clock className="w-3.5 h-3.5" />
+            <span>Pending Works</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                activeTab === 'pending' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
+              {pendingTasks.length}
             </span>
           </button>
 
+          {/* 2. Daily Assigned Tab */}
           <button
             type="button"
-            onClick={() => setActiveTab('my_works')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-              activeTab === 'my_works'
+            onClick={() => setActiveTab('daily')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'daily'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
-            <span>My Active Works</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'my_works' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'}`}>
-              {myActiveTasks.length}
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Daily Assigned</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                activeTab === 'daily' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
+              {dailyAssignedTasks.length}
             </span>
           </button>
 
+          {/* 3. Revisions Requested */}
           <button
             type="button"
             onClick={() => setActiveTab('revisions')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === 'revisions'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
+            <AlertTriangle className="w-3.5 h-3.5" />
             <span>Revisions Requested</span>
             {revisionTasks.length > 0 && (
               <span className="px-2 py-0.5 rounded-full text-[10px] bg-red-500 text-white font-black animate-pulse">
@@ -432,228 +726,315 @@ export default function DesignerDashboard({
             )}
           </button>
 
+          {/* 4. Active Works */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('my_works')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'my_works'
+                ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
+                : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Active Works</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'my_works' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
+              {myActiveTasks.length}
+            </span>
+          </button>
+
+          {/* 5. Submitted (Awaiting Review) */}
           <button
             type="button"
             onClick={() => setActiveTab('submitted')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === 'submitted'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
-            <span>Submitted (Awaiting Review)</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'submitted' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'}`}>
+            <Send className="w-3.5 h-3.5" />
+            <span>Submitted (Review)</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'submitted' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
               {submittedTasks.length}
             </span>
           </button>
 
+          {/* 6. Available Works */}
+          <button
+            type="button"
+            onClick={() => setActiveTab('available')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+              activeTab === 'available'
+                ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
+                : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
+            }`}
+          >
+            <Briefcase className="w-3.5 h-3.5" />
+            <span>Available Briefs</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'available' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
+              {availableTasks.length}
+            </span>
+          </button>
+
+          {/* 7. Completed Works */}
           <button
             type="button"
             onClick={() => setActiveTab('completed')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
               activeTab === 'completed'
                 ? 'bg-[#FF4D00] text-black shadow-[0_0_15px_rgba(255,77,0,0.3)]'
                 : 'bg-[#141414] hover:bg-white/10 text-[#A3A3A3] hover:text-white'
             }`}
           >
-            <span>Completed Works</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${activeTab === 'completed' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'}`}>
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>Completed</span>
+            <span
+              className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === 'completed' ? 'bg-black text-[#FF4D00]' : 'bg-black text-white'
+              }`}
+            >
               {completedTasks.length}
             </span>
           </button>
         </div>
 
         {/* Tab Content Cards */}
-        {(() => {
-          let currentList: Task[] = [];
-          let emptyMessage = '';
+        {displayedTasks.length === 0 ? (
+          <div className="p-16 rounded-3xl bg-[#0a0a0a] border border-white/10 text-center space-y-3">
+            <Briefcase className="w-10 h-10 text-[#737373] mx-auto opacity-50" />
+            <p className="text-sm font-bold text-white">No tasks found in this view</p>
+            <p className="text-xs text-[#A3A3A3] max-w-sm mx-auto">
+              {dateSearch
+                ? `No assignments or submissions matching date "${dateSearch}". Try clearing the date search or selecting another date.`
+                : activeTab === 'pending'
+                ? 'You have zero pending tasks! Great job staying ahead of your design queue.'
+                : activeTab === 'daily'
+                ? `No works assigned on ${dateSearch || 'today'}. Check "Available Briefs" or browse all dates.`
+                : 'No tasks currently in this section.'}
+            </p>
+            {dateSearch && (
+              <button
+                type="button"
+                onClick={() => setDateSearch('')}
+                className="px-4 py-2 rounded-full text-xs font-bold bg-[#FF4D00] text-black hover:bg-[#FF7A00] transition-colors"
+              >
+                Clear Date Filter
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {displayedTasks.map((task) => {
+              const isClaiming = claimingTaskId === task.id;
+              const hasSubmissions = (task.submissions || []).length > 0;
+              const latestSub = hasSubmissions
+                ? task.submissions.reduce((prev, curr) => (curr.version > prev.version ? curr : prev))
+                : null;
 
-          if (activeTab === 'available') {
-            currentList = availableTasks;
-            emptyMessage = 'No new briefs available right now. Check back soon for new client assignments!';
-          } else if (activeTab === 'my_works') {
-            currentList = myActiveTasks;
-            emptyMessage = 'You currently have no active assignments. Browse "Available Works" to claim a new design brief.';
-          } else if (activeTab === 'revisions') {
-            currentList = revisionTasks;
-            emptyMessage = 'No revisions requested. Great job on your submissions!';
-          } else if (activeTab === 'submitted') {
-            currentList = submittedTasks;
-            emptyMessage = 'No submissions awaiting review.';
-          } else {
-            currentList = completedTasks;
-            emptyMessage = 'No completed works yet.';
-          }
+              const assignedDateStr = task.assignedAt
+                ? task.assignedAt.slice(0, 10)
+                : task.createdAt?.slice(0, 10);
 
-          if (currentList.length === 0) {
-            return (
-              <div className="p-16 rounded-3xl bg-[#0a0a0a] border border-white/10 text-center space-y-3">
-                <Briefcase className="w-10 h-10 text-[#737373] mx-auto opacity-50" />
-                <p className="text-sm font-bold text-white">No tasks in this section</p>
-                <p className="text-xs text-[#A3A3A3] max-w-sm mx-auto">{emptyMessage}</p>
-              </div>
-            );
-          }
-
-          return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {currentList.map((task) => {
-                const isClaiming = claimingTaskId === task.id;
-                const hasSubmissions = (task.submissions || []).length > 0;
-                const latestSub = hasSubmissions
-                  ? task.submissions.reduce((prev, curr) => (curr.version > prev.version ? curr : prev))
-                  : null;
-
-                return (
-                  <div
-                    key={task.id}
-                    className={`luxury-card rounded-2xl p-6 border flex flex-col justify-between transition-all duration-300 ${
-                      task.status === 'revision_requested'
-                        ? 'border-[#FF4D00]/60 bg-[#160d07] shadow-[0_0_25px_rgba(255,77,0,0.15)]'
-                        : task.status === 'completed'
-                        ? 'border-emerald-500/30 bg-[#07130a]'
-                        : 'border-white/10 hover:border-white/20'
-                    }`}
-                  >
-                    <div className="space-y-3">
-                      {/* Top Badges */}
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                              task.priority === 'urgent'
-                                ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-                                : task.priority === 'high'
-                                ? 'bg-[#FF4D00]/20 text-[#FF4D00] border border-[#FF4D00]/30'
-                                : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
-                            }`}
-                          >
-                            {task.priority} Priority
-                          </span>
-
-                          <span className="text-[11px] text-[#A3A3A3] flex items-center gap-1">
-                            <Calendar className="w-3.5 h-3.5 text-[#FF4D00]" />
-                            <span>Due: {formatDate(task.deadline)}</span>
-                          </span>
-                        </div>
-
-                        {task.status === 'revision_requested' && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#FF4D00] text-black animate-pulse flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            Revision Requested
-                          </span>
-                        )}
-
-                        {task.status === 'completed' && (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            Approved
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Title & Client */}
-                      <div>
-                        <h3
-                          onClick={() => setSelectedTask(task)}
-                          className="text-lg font-bold text-white hover:text-[#FF4D00] transition-colors cursor-pointer"
+              return (
+                <div
+                  key={task.id}
+                  className={`luxury-card rounded-2xl p-6 border flex flex-col justify-between transition-all duration-300 ${
+                    task.status === 'revision_requested'
+                      ? 'border-[#FF4D00]/60 bg-[#160d07] shadow-[0_0_25px_rgba(255,77,0,0.15)]'
+                      : task.status === 'completed'
+                      ? 'border-emerald-500/30 bg-[#07130a]'
+                      : 'border-white/10 hover:border-white/20'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    {/* Top Badges */}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                            task.priority === 'urgent'
+                              ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+                              : task.priority === 'high'
+                              ? 'bg-[#FF4D00]/20 text-[#FF4D00] border border-[#FF4D00]/30'
+                              : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                          }`}
                         >
-                          {task.title}
-                        </h3>
-                        <p className="text-xs text-[#A3A3A3] mt-0.5">
-                          Client: <strong className="text-white">{task.client}</strong>
-                        </p>
-                      </div>
-
-                      {/* Brief Excerpt */}
-                      <p className="text-xs text-[#B3B3B3] line-clamp-3 leading-relaxed">
-                        {task.brief}
-                      </p>
-
-                      {/* Deliverables snippet */}
-                      <div className="p-2.5 rounded-xl bg-black border border-white/5 space-y-1">
-                        <span className="text-[10px] uppercase font-bold text-[#A3A3A3] block">
-                          Deliverables & Formats
+                          {task.priority} Priority
                         </span>
-                        <p className="text-xs text-white truncate">{task.deliverables}</p>
+
+                        {assignedDateStr && (
+                          <span className="text-[10px] text-[#A3A3A3] flex items-center gap-1 font-mono">
+                            <Clock className="w-3 h-3 text-white/50" />
+                            <span>Assigned: {assignedDateStr}</span>
+                          </span>
+                        )}
+
+                        <span className="text-[10px] text-[#A3A3A3] flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-[#FF4D00]" />
+                          <span>Due: {formatDate(task.deadline)}</span>
+                        </span>
                       </div>
 
-                      {/* Prominent Revision Banner inside card if revision requested */}
-                      {task.status === 'revision_requested' && latestSub?.adminFeedback && (
-                        <div className="p-3 rounded-xl bg-[#FF4D00]/10 border border-[#FF4D00]/40 space-y-1">
-                          <span className="text-[10px] uppercase font-bold text-[#FF4D00] block flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3" />
-                            Admin Requested Changes:
-                          </span>
-                          <p className="text-xs text-[#F5F5F5] line-clamp-2 italic">
-                            &quot;{latestSub.adminFeedback}&quot;
-                          </p>
-                        </div>
+                      {task.status === 'revision_requested' && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#FF4D00] text-black animate-pulse flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Revision Requested
+                        </span>
+                      )}
+
+                      {task.status === 'completed' && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Approved
+                        </span>
+                      )}
+
+                      {(task.status === 'submitted' || task.status === 'resubmitted') && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                          <Send className="w-3 h-3" />
+                          Under Review (v{latestSub?.version || 1})
+                        </span>
+                      )}
+
+                      {task.status === 'in_progress' && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                          In Progress
+                        </span>
+                      )}
+
+                      {task.status === 'assigned' && (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                          Assigned
+                        </span>
                       )}
                     </div>
 
-                    {/* Card Actions Footer */}
-                    <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between gap-3">
+                    {/* Title & Client */}
+                    <div>
+                      <h3
+                        onClick={() => setSelectedTask(task)}
+                        className="text-lg font-bold text-white hover:text-[#FF4D00] transition-colors cursor-pointer"
+                      >
+                        {task.title}
+                      </h3>
+                      <p className="text-xs text-[#A3A3A3] mt-0.5">
+                        Client: <strong className="text-white">{task.client}</strong>
+                        {task.category && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-white/5 text-[10px] text-[#A3A3A3]">
+                            {task.category}
+                          </span>
+                        )}
+                      </p>
+                    </div>
+
+                    {/* Brief Excerpt */}
+                    <p className="text-xs text-[#B3B3B3] line-clamp-3 leading-relaxed">
+                      {task.brief}
+                    </p>
+
+                    {/* Deliverables snippet */}
+                    <div className="p-2.5 rounded-xl bg-black border border-white/5 space-y-1">
+                      <span className="text-[10px] uppercase font-bold text-[#A3A3A3] block">
+                        Deliverables & Formats
+                      </span>
+                      <p className="text-xs text-white truncate">{task.deliverables}</p>
+                    </div>
+
+                    {/* Prominent Revision Banner inside card if revision requested */}
+                    {task.status === 'revision_requested' && latestSub?.adminFeedback && (
+                      <div className="p-3 rounded-xl bg-[#FF4D00]/10 border border-[#FF4D00]/40 space-y-1">
+                        <span className="text-[10px] uppercase font-bold text-[#FF4D00] block flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          Admin Requested Changes:
+                        </span>
+                        <p className="text-xs text-[#F5F5F5] line-clamp-2 italic">
+                          &quot;{latestSub.adminFeedback}&quot;
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card Actions Footer */}
+                  <div className="pt-4 mt-4 border-t border-white/5 flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTask(task)}
+                      className="text-xs font-semibold text-[#A3A3A3] hover:text-white flex items-center gap-1 transition-colors"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Brief & Files</span>
+                    </button>
+
+                    {task.status === 'available' ? (
                       <button
                         type="button"
-                        onClick={() => setSelectedTask(task)}
-                        className="text-xs font-semibold text-[#A3A3A3] hover:text-white flex items-center gap-1 transition-colors"
+                        onClick={() => handleTakeWork(task)}
+                        disabled={isClaiming}
+                        className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] disabled:opacity-50 flex items-center gap-1.5"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span>View Brief & Files</span>
+                        <Briefcase className="w-3.5 h-3.5" />
+                        <span>{isClaiming ? 'Claiming...' : 'Take Work'}</span>
                       </button>
-
-                      {activeTab === 'available' ? (
+                    ) : task.status === 'revision_requested' ? (
+                      <button
+                        type="button"
+                        onClick={() => openSubmissionModal(task)}
+                        className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex items-center gap-1.5"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Submit Revision</span>
+                      </button>
+                    ) : task.status === 'assigned' ? (
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => handleTakeWork(task)}
-                          disabled={isClaiming}
-                          className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] disabled:opacity-50 flex items-center gap-1.5"
+                          onClick={() => handleStartWork(task)}
+                          className="px-4 py-2 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
                         >
-                          <Briefcase className="w-3.5 h-3.5" />
-                          <span>{isClaiming ? 'Claiming...' : 'Take Work'}</span>
+                          Start Working
                         </button>
-                      ) : activeTab === 'revisions' ? (
                         <button
                           type="button"
                           onClick={() => openSubmissionModal(task)}
                           className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex items-center gap-1.5"
                         >
                           <Send className="w-3.5 h-3.5" />
-                          <span>Submit Revision</span>
+                          <span>Submit Work</span>
                         </button>
-                      ) : activeTab === 'my_works' ? (
-                        <div className="flex items-center gap-2">
-                          {task.status === 'assigned' && (
-                            <button
-                              type="button"
-                              onClick={() => handleStartWork(task)}
-                              className="px-4 py-2 rounded-full text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
-                            >
-                              Start Working
-                            </button>
-                          )}
-                          <button
-                            type="button"
-                            onClick={() => openSubmissionModal(task)}
-                            className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex items-center gap-1.5"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Submit Work</span>
-                          </button>
-                        </div>
-                      ) : (
-                        <span className="text-xs text-[#737373]">
-                          {hasSubmissions ? `${task.submissions.length} Version(s)` : 'No files'}
-                        </span>
-                      )}
-                    </div>
+                      </div>
+                    ) : task.status === 'in_progress' ? (
+                      <button
+                        type="button"
+                        onClick={() => openSubmissionModal(task)}
+                        className="px-5 py-2 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] hover:bg-[#FF7A00] text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex items-center gap-1.5"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Submit Work</span>
+                      </button>
+                    ) : (
+                      <span className="text-xs text-[#737373]">
+                        {hasSubmissions ? `${task.submissions.length} Version(s)` : 'No files'}
+                      </span>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          );
-        })()}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </main>
 
       {/* Task Details & Revision History Modal */}
@@ -691,7 +1072,9 @@ export default function DesignerDashboard({
                   >
                     Take Work
                   </button>
-                ) : (selectedTask.status === 'in_progress' || selectedTask.status === 'assigned' || selectedTask.status === 'revision_requested') ? (
+                ) : selectedTask.status === 'in_progress' ||
+                  selectedTask.status === 'assigned' ||
+                  selectedTask.status === 'revision_requested' ? (
                   <button
                     type="button"
                     onClick={() => {
@@ -700,7 +1083,11 @@ export default function DesignerDashboard({
                     className="px-5 py-2 rounded-full text-xs font-bold uppercase bg-[#FF4D00] text-black hover:bg-[#FF7A00] transition-colors flex items-center gap-1.5"
                   >
                     <Send className="w-3.5 h-3.5" />
-                    <span>{selectedTask.status === 'revision_requested' ? 'Submit Revision' : 'Submit Deliverables'}</span>
+                    <span>
+                      {selectedTask.status === 'revision_requested'
+                        ? 'Submit Revision'
+                        : 'Submit Deliverables'}
+                    </span>
                   </button>
                 ) : null}
 
@@ -746,18 +1133,19 @@ export default function DesignerDashboard({
                   )}
 
                   {/* Admin Revision Reference Models & Files */}
-                  {selectedTask.submissions?.[0]?.adminFeedbackAttachments && selectedTask.submissions[0].adminFeedbackAttachments.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-white/10">
-                      <span className="text-[10px] uppercase font-bold text-white block">
-                        Revision References & Models ({selectedTask.submissions[0].adminFeedbackAttachments.length})
-                      </span>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {selectedTask.submissions[0].adminFeedbackAttachments.map((file) => (
-                          <FileAttachmentCard key={file.id || file.url} file={file} readOnly={true} />
-                        ))}
+                  {selectedTask.submissions?.[0]?.adminFeedbackAttachments &&
+                    selectedTask.submissions[0].adminFeedbackAttachments.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t border-white/10">
+                        <span className="text-[10px] uppercase font-bold text-white block">
+                          Revision References & Models ({selectedTask.submissions[0].adminFeedbackAttachments.length})
+                        </span>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {selectedTask.submissions[0].adminFeedbackAttachments.map((file) => (
+                            <FileAttachmentCard key={file.id || file.url} file={file} readOnly={true} />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
                   <button
                     type="button"
@@ -889,7 +1277,9 @@ export default function DesignerDashboard({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">
-                    {selectedTask.status === 'revision_requested' ? 'Submit Revised Deliverables' : 'Submit Work Package'}
+                    {selectedTask.status === 'revision_requested'
+                      ? 'Submit Revised Deliverables'
+                      : 'Submit Work Package'}
                   </h3>
                   <p className="text-[11px] text-[#A3A3A3]">{selectedTask.title}</p>
                 </div>
@@ -944,7 +1334,11 @@ export default function DesignerDashboard({
                       : 'border-white/20 hover:border-[#FF4D00] bg-[#0a0a0a]'
                   }`}
                 >
-                  <Upload className={`w-8 h-8 text-[#FF4D00] mb-2 ${uploadingFiles ? 'animate-bounce' : isDragging ? 'scale-125 transition-transform' : ''}`} />
+                  <Upload
+                    className={`w-8 h-8 text-[#FF4D00] mb-2 ${
+                      uploadingFiles ? 'animate-bounce' : isDragging ? 'scale-125 transition-transform' : ''
+                    }`}
+                  />
                   <p className="text-xs font-bold text-white">
                     {isDragging ? 'Release to drop & attach files' : 'Click to select files or drag & drop here'}
                   </p>

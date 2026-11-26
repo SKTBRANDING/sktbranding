@@ -732,62 +732,6 @@
       "paidAt": "2026-10-25T14:30:00.000Z",
       "createdAt": "2026-10-15T09:00:00.000Z",
       "updatedAt": "2026-10-25T14:30:00.000Z"
-    },
-    {
-      "id": "inv-2",
-      "invoiceNumber": "SKT-INV-2026-002",
-      "clientId": "client-aethelgard",
-      "clientName": "Aethelgard Distillers Co.",
-      "clientEmail": "finance@aethelgard.co.uk",
-      "clientPhone": "+44 20 7946 0912",
-      "clientCompany": "Aethelgard Botanical Spirits Ltd.",
-      "clientAddress": "The Highland Atelier, Cairngorms, Scotland, UK",
-      "projectId": "proj-1",
-      "projectName": "Aethelgard Botanical Spirits Packaging Architecture",
-      "issueDate": "2026-11-01",
-      "dueDate": "2026-11-15",
-      "items": [
-        {
-          "id": "item-4",
-          "description": "Structural Glass Bottle Packaging & Deboss Dies Architecture",
-          "category": "Packaging",
-          "quantity": 1,
-          "rate": 4500,
-          "amount": 4500
-        },
-        {
-          "id": "item-5",
-          "description": "Copper Foil Finishing Typography System & Nomenclature",
-          "category": "Branding",
-          "quantity": 1,
-          "rate": 2800,
-          "amount": 2800
-        },
-        {
-          "id": "item-6",
-          "description": "Photorealistic 3D Ray-Traced Renders (8K Studio Lighting)",
-          "category": "Packaging",
-          "quantity": 4,
-          "rate": 300,
-          "amount": 1200
-        }
-      ],
-      "subtotal": 8500,
-      "taxRate": 0,
-      "taxAmount": 0,
-      "discountRate": 0,
-      "discountAmount": 0,
-      "total": 8500,
-      "amountPaid": 8500,
-      "balanceDue": 0,
-      "status": "paid",
-      "currency": "USD",
-      "paymentMethod": "stripe",
-      "paymentDetails": "Stripe Electronic Payment #ch_3N82bX92La81 confirmed.",
-      "notes": "All dieline production vector files delivered directly to glass manufacturing facility.",
-      "paidAt": "2026-11-12T16:20:00.000Z",
-      "createdAt": "2026-11-01T10:00:00.000Z",
-      "updatedAt": "2026-11-12T16:20:00.000Z"
     }
   ]
 }

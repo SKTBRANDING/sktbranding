@@ -14,6 +14,10 @@ import {
   Check,
   CheckCircle2,
   AlertTriangle,
+  Lock,
+  Key,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { AgencySettings } from '@/types';
 import { adminFetch } from '@/lib/adminApi';
@@ -32,6 +36,33 @@ export default function AdminSettings({ settings, onRefresh, showToast }: AdminS
 
   const [saving, setSaving] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
+  const [newAdminPassword, setNewAdminPassword] = useState('');
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [updatingPassword, setUpdatingPassword] = useState(false);
+
+  const handleUpdateAdminPassword = async () => {
+    if (!newAdminPassword.trim() || newAdminPassword.trim().length < 4) {
+      showToast('Admin password must be at least 4 characters long.', 'error');
+      return;
+    }
+    setUpdatingPassword(true);
+    try {
+      const res = await adminFetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ newPassword: newAdminPassword.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update admin password');
+      showToast('Admin Studio login password updated successfully! Keep this password safe.');
+      setNewAdminPassword('');
+      await onRefresh();
+    } catch (err: any) {
+      showToast(err.message || 'Error updating password', 'error');
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -348,6 +379,69 @@ create table if not exists public.inquiries (
                 className="w-full px-4 py-2.5 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
               />
             </div>
+          </div>
+        </div>
+
+        {/* Card 4.5: Admin Security & Studio Password Customization */}
+        <div className="luxury-card rounded-3xl p-6 sm:p-8 border border-white/10 space-y-6">
+          <div className="flex items-center justify-between border-b border-white/[0.08] pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#FF4D00]/40 flex items-center justify-center text-[#FF4D00]">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <span>Admin Studio Security & Password</span>
+                  <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-[#FF4D00]/10 text-[#FF4D00] border border-[#FF4D00]/30 font-bold">
+                    Customizable
+                  </span>
+                </h3>
+                <p className="text-xs text-[#A3A3A3]">
+                  Customize the password required to log in to the private Admin Studio at <code className="text-[#FF7A00]">/admin</code>.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-[#0a0a0a] border border-white/10 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3.5">
+              <div className="flex-1 space-y-1.5">
+                <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-[#FF4D00]" />
+                  <span>Enter New Admin Studio Password</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type={showAdminPassword ? 'text' : 'password'}
+                    value={newAdminPassword}
+                    onChange={(e) => setNewAdminPassword(e.target.value)}
+                    placeholder="Enter new custom admin password (e.g. your secret password)..."
+                    className="w-full pl-4 pr-10 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-[#FF4D00]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#737373] hover:text-white"
+                  >
+                    {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleUpdateAdminPassword}
+                disabled={updatingPassword || !newAdminPassword.trim()}
+                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#FF4D00] hover:bg-[#FF6A26] disabled:opacity-40 text-xs font-bold text-black transition-all shadow-[0_0_15px_rgba(255,77,0,0.3)] flex-shrink-0"
+              >
+                <Lock className={`w-3.5 h-3.5 ${updatingPassword ? 'animate-spin' : ''}`} />
+                <span>{updatingPassword ? 'Updating...' : 'Update Admin Password'}</span>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-[#737373]">
+              Default fallback password: <code className="text-[#A3A3A3]">admin123</code>. Once updated, your new password will be required immediately upon your next sign-in.
+            </p>
           </div>
         </div>
       </form>
