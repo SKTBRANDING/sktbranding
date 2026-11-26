@@ -52,7 +52,7 @@ export default function AdminSettings({ settings, onRefresh, showToast }: AdminS
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ newPassword: newAdminPassword.trim() }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Failed to update admin password');
       showToast('Admin Studio login password updated successfully! Keep this password safe.');
       setNewAdminPassword('');

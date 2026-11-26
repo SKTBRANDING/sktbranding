@@ -326,7 +326,7 @@ export default function AdminDesigners({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ customToken: newPassword.trim() }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Failed to update designer password');
 
       showToast(`Password updated to "${data.token}" for ${designer.name}!`);
@@ -355,7 +355,7 @@ export default function AdminDesigners({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'regenerate' }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Failed to regenerate link');
 
       showToast(`New password token generated: ${data.token}`);
@@ -461,7 +461,7 @@ export default function AdminDesigners({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Failed to update designer');
         showToast(`Designer ${formData.name} updated!`);
       } else {
@@ -470,7 +470,7 @@ export default function AdminDesigners({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Failed to add designer');
         showToast(`Designer ${formData.name} added! Access password set.`);
       }

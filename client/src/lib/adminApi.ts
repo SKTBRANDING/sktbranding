@@ -53,8 +53,8 @@ export async function uploadMediaFile(file: File): Promise<string> {
     });
 
     if (res.ok) {
-      const json = await res.json();
-      if (json.url) return json.url;
+      const json = await res.json().catch(() => ({}));
+      if (json && json.url) return json.url;
     }
   } catch (err) {
     console.warn('[uploadMediaFile] Remote upload failed, using high-reliability inline fallback:', err);

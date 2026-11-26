@@ -103,7 +103,7 @@ export default function ContactSection({
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         if (data.errors) {

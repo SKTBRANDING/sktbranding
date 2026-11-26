@@ -62,7 +62,7 @@ export default function DesignerRoot({
         body: JSON.stringify({ token }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {
         return false;
       }
@@ -94,7 +94,7 @@ export default function DesignerRoot({
       }
       const res = await fetch('/api/tasks', { headers });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
         if (Array.isArray(data)) {
           setTasks(data);
         }

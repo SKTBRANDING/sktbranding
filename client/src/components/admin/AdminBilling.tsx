@@ -358,7 +358,7 @@ export default function AdminBilling({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Failed to update invoice');
         showToast(`Invoice ${payload.invoiceNumber} updated successfully!`);
       } else {
@@ -367,7 +367,7 @@ export default function AdminBilling({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(data.error || 'Failed to generate invoice');
         showToast(`Invoice ${payload.invoiceNumber} created for ${payload.clientName}!`);
       }
@@ -430,7 +430,7 @@ export default function AdminBilling({
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || 'Failed to record payment');
 
       showToast(`Payment of ${formatCurrency(paymentAmount, paymentTargetInvoice.currency)} recorded for ${paymentTargetInvoice.clientName}!`);

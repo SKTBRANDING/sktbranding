@@ -148,6 +148,12 @@ router.post('/', requireAdmin, async (req, res) => {
     const {
       title,
       client,
+      clientCompany = '',
+      clientPhone = '',
+      clientEmail = '',
+      clientAddress = '',
+      serviceCategory = 'Poster Design',
+      serviceName = '',
       brief,
       textContent = '',
       voiceBrief = null,
@@ -185,6 +191,12 @@ router.post('/', requireAdmin, async (req, res) => {
       id: `task-${crypto.randomUUID().slice(0, 8)}`,
       title: title.trim(),
       client: client.trim(),
+      clientCompany: String(clientCompany || '').trim(),
+      clientPhone: String(clientPhone || '').trim(),
+      clientEmail: String(clientEmail || '').trim(),
+      clientAddress: String(clientAddress || '').trim(),
+      serviceCategory: String(serviceCategory || 'Poster Design').trim(),
+      serviceName: String(serviceName || serviceCategory || 'Poster Design').trim(),
       brief: brief.trim(),
       textContent: textContent.trim(),
       voiceBrief,
@@ -262,6 +274,12 @@ router.put('/:id', requireAdmin, async (req, res) => {
         if (task) {
           if (body.title !== undefined) task.title = body.title.trim();
           if (body.client !== undefined) task.client = body.client.trim();
+          if (body.clientCompany !== undefined) task.clientCompany = String(body.clientCompany).trim();
+          if (body.clientPhone !== undefined) task.clientPhone = String(body.clientPhone).trim();
+          if (body.clientEmail !== undefined) task.clientEmail = String(body.clientEmail).trim();
+          if (body.clientAddress !== undefined) task.clientAddress = String(body.clientAddress).trim();
+          if (body.serviceCategory !== undefined) task.serviceCategory = String(body.serviceCategory).trim();
+          if (body.serviceName !== undefined) task.serviceName = String(body.serviceName).trim();
           if (body.brief !== undefined) task.brief = body.brief.trim();
           if (body.textContent !== undefined) task.textContent = body.textContent.trim();
           if (body.voiceBrief !== undefined) task.voiceBrief = body.voiceBrief;
@@ -420,6 +438,7 @@ async function recordSubmissionToClientInvoice(task) {
     if (!clientName) return;
 
     const rate = Math.max(0, Number(task.rate) || 300);
+    const category = (task.serviceCategory || task.serviceName || 'Design Deliverables').trim();
     const itemDescription = (task.title || 'Creative Deliverable').trim();
     const todayStr = new Date().toISOString().split('T')[0];
     const dueDateStr = task.deadline
@@ -449,7 +468,7 @@ async function recordSubmissionToClientInvoice(task) {
             invoice.items.push({
               id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
               description: itemDescription,
-              category: 'Design & Creative',
+              category: category,
               quantity: 1,
               rate: rate,
               amount: rate,
@@ -469,6 +488,10 @@ async function recordSubmissionToClientInvoice(task) {
           invoice.total = total;
           invoice.balanceDue = balanceDue;
           if (!invoice.currency) invoice.currency = 'INR';
+          if (task.clientCompany && !invoice.clientCompany) invoice.clientCompany = task.clientCompany;
+          if (task.clientPhone && !invoice.clientPhone) invoice.clientPhone = task.clientPhone;
+          if (task.clientEmail && !invoice.clientEmail) invoice.clientEmail = task.clientEmail;
+          if (task.clientAddress && !invoice.clientAddress) invoice.clientAddress = task.clientAddress;
 
           await invoice.save();
         } else {
@@ -481,8 +504,10 @@ async function recordSubmissionToClientInvoice(task) {
             invoiceNumber,
             clientId: '',
             clientName,
-            clientEmail: `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
-            clientCompany: clientName,
+            clientEmail: task.clientEmail || `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
+            clientCompany: task.clientCompany || clientName,
+            clientPhone: task.clientPhone || '',
+            clientAddress: task.clientAddress || '',
             projectName: `${itemDescription}`,
             issueDate: todayStr,
             dueDate: dueDateStr,
@@ -490,7 +515,7 @@ async function recordSubmissionToClientInvoice(task) {
               {
                 id: `item-${Date.now()}`,
                 description: itemDescription,
-                category: 'Design & Creative',
+                category: category,
                 quantity: 1,
                 rate: rate,
                 amount: rate,
@@ -541,7 +566,7 @@ async function recordSubmissionToClientInvoice(task) {
           existingInv.items.push({
             id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
             description: itemDescription,
-            category: 'Design & Creative',
+            category: category,
             quantity: 1,
             rate: rate,
             amount: rate,
@@ -561,6 +586,10 @@ async function recordSubmissionToClientInvoice(task) {
         existingInv.total = total;
         existingInv.balanceDue = balanceDue;
         if (!existingInv.currency) existingInv.currency = 'INR';
+        if (task.clientCompany && !existingInv.clientCompany) existingInv.clientCompany = task.clientCompany;
+        if (task.clientPhone && !existingInv.clientPhone) existingInv.clientPhone = task.clientPhone;
+        if (task.clientEmail && !existingInv.clientEmail) existingInv.clientEmail = task.clientEmail;
+        if (task.clientAddress && !existingInv.clientAddress) existingInv.clientAddress = task.clientAddress;
         existingInv.updatedAt = new Date().toISOString();
       } else {
         const year = new Date().getFullYear();
@@ -570,10 +599,10 @@ async function recordSubmissionToClientInvoice(task) {
           invoiceNumber,
           clientId: '',
           clientName,
-          clientEmail: `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
-          clientPhone: '',
-          clientCompany: clientName,
-          clientAddress: '',
+          clientEmail: task.clientEmail || `billing@${clientName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() || 'client'}.com`,
+          clientPhone: task.clientPhone || '',
+          clientCompany: task.clientCompany || clientName,
+          clientAddress: task.clientAddress || '',
           projectId: '',
           projectName: itemDescription,
           issueDate: todayStr,
@@ -582,7 +611,7 @@ async function recordSubmissionToClientInvoice(task) {
             {
               id: `item-${Date.now()}`,
               description: itemDescription,
-              category: 'Design & Creative',
+              category: category,
               quantity: 1,
               rate: rate,
               amount: rate,

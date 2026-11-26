@@ -248,7 +248,7 @@ export default function DesignerDashboard({
         headers,
         credentials: 'include',
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         throw new Error(data.error || 'Failed to claim task');
       }
@@ -347,7 +347,7 @@ export default function DesignerDashboard({
           body: formData,
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok && data.url) {
           newUploads.push({
             id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
@@ -413,7 +413,7 @@ export default function DesignerDashboard({
         }),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Failed to submit deliverables');
 
       // 1. Optimistic update: move work from Starting Works to Submitted review panel
@@ -995,9 +995,9 @@ export default function DesignerDashboard({
                       </h3>
                       <p className="text-xs text-[#A3A3A3] mt-0.5">
                         Client: <strong className="text-white">{task.client}</strong>
-                        {task.category && (
-                          <span className="ml-2 px-2 py-0.5 rounded bg-white/5 text-[10px] text-[#A3A3A3]">
-                            {task.category}
+                        {(task.serviceCategory || task.category) && (
+                          <span className="ml-2 px-2 py-0.5 rounded bg-white/5 text-[10px] text-[#FF4D00] border border-[#FF4D00]/30 font-medium">
+                            {task.serviceCategory || task.category}
                           </span>
                         )}
                       </p>

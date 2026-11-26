@@ -224,6 +224,12 @@ export interface Task {
   id: string;
   title: string;
   client: string;
+  clientCompany?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  clientAddress?: string;
+  serviceCategory?: string;
+  serviceName?: string;
   brief: string;
   textContent?: string; // Text content / copy to be incorporated into design
   voiceBrief?: TaskAttachment | null; // Audio / voice instructions from admin

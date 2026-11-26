@@ -26,6 +26,11 @@ import {
   Box,
   Mic,
   FileAudio,
+  Phone,
+  Mail,
+  MapPin,
+  Building,
+  Tag,
 } from 'lucide-react';
 import { Task, Designer, TaskAttachment, TaskPriority, TaskStatus } from '@/types';
 import { formatDate } from '@/lib/dateUtils';
@@ -33,6 +38,19 @@ import FileAttachmentCard from '@/components/ui/FileAttachmentCard';
 import RevisionTimeline from '@/components/ui/RevisionTimeline';
 import AudioVoiceControl, { AudioPlayer } from '@/components/ui/AudioVoiceControl';
 import { adminFetch } from '@/lib/adminApi';
+
+const STUDIO_SERVICES = [
+  { name: 'Poster Design', defaultRate: 300, category: 'Poster Design' },
+  { name: 'Social Media Post & Creatives', defaultRate: 300, category: 'Social Media' },
+  { name: 'Logo Design & Monogram', defaultRate: 1500, category: 'Logo Design' },
+  { name: 'Brand Identity & Guidelines', defaultRate: 3500, category: 'Branding' },
+  { name: 'Packaging & Label Design', defaultRate: 2000, category: 'Packaging' },
+  { name: 'Brochure & Editorial Lookbook', defaultRate: 1200, category: 'Print' },
+  { name: 'Website & UI Design', defaultRate: 4000, category: 'Web Design' },
+  { name: 'Motion Graphics & Story Reel', defaultRate: 800, category: 'Motion' },
+  { name: '3D Modeling & Product Mockup', defaultRate: 1000, category: '3D Mockup' },
+  { name: 'Custom Design Service', defaultRate: 300, category: 'Custom' },
+];
 
 interface AdminTasksProps {
   tasks: Task[];
@@ -78,6 +96,11 @@ export default function AdminTasks({
   const [formData, setFormData] = useState<{
     title: string;
     client: string;
+    clientCompany: string;
+    clientPhone: string;
+    clientEmail: string;
+    clientAddress: string;
+    serviceCategory: string;
     brief: string;
     textContent: string;
     voiceBrief: TaskAttachment | null;
@@ -93,13 +116,18 @@ export default function AdminTasks({
   }>({
     title: '',
     client: '',
+    clientCompany: '',
+    clientPhone: '',
+    clientEmail: '',
+    clientAddress: '',
+    serviceCategory: 'Poster Design',
     brief: '',
     textContent: '',
     voiceBrief: null,
     deliverables: '',
     rate: 300,
-    dimensions: '',
-    fileFormats: 'AI, PSD, PDF, PNG',
+    dimensions: '1080x1920 (9:16)',
+    fileFormats: 'AI, PSD, PDF, High-Res PNG',
     priority: 'medium',
     assignedAt: new Date().toISOString().slice(0, 10),
     deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
@@ -170,7 +198,7 @@ export default function AdminTasks({
           method: 'POST',
           body: data,
         });
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || `Failed to upload ${file.name}`);
         uploaded.push(json);
       }
@@ -200,7 +228,7 @@ export default function AdminTasks({
           method: 'POST',
           body: data,
         });
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || `Failed to upload ${file.name}`);
         newUploads.push(json);
       }
@@ -218,12 +246,17 @@ export default function AdminTasks({
     setFormData({
       title: '',
       client: '',
+      clientCompany: '',
+      clientPhone: '',
+      clientEmail: '',
+      clientAddress: '',
+      serviceCategory: 'Poster Design',
       brief: '',
       textContent: '',
       voiceBrief: null,
       deliverables: '',
       rate: 300,
-      dimensions: '',
+      dimensions: '1080x1920 (9:16)',
       fileFormats: 'AI, PSD, PDF, High-Res PNG',
       priority: 'medium',
       assignedAt: new Date().toISOString().slice(0, 10),
@@ -239,12 +272,17 @@ export default function AdminTasks({
     setFormData({
       title: task.title,
       client: task.client,
+      clientCompany: task.clientCompany || '',
+      clientPhone: task.clientPhone || '',
+      clientEmail: task.clientEmail || '',
+      clientAddress: task.clientAddress || '',
+      serviceCategory: task.serviceCategory || 'Poster Design',
       brief: task.brief,
       textContent: task.textContent || '',
       voiceBrief: task.voiceBrief || null,
       deliverables: task.deliverables || '',
       rate: task.rate ?? 300,
-      dimensions: task.dimensions || '',
+      dimensions: task.dimensions || '1080x1920 (9:16)',
       fileFormats: task.fileFormats || 'AI, PSD, PDF, High-Res PNG',
       priority: task.priority,
       assignedAt: task.assignedAt ? task.assignedAt.slice(0, 10) : new Date().toISOString().slice(0, 10),
@@ -270,7 +308,7 @@ export default function AdminTasks({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'Failed to update task');
         showToast('Task updated successfully!');
       } else {
@@ -279,7 +317,7 @@ export default function AdminTasks({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData),
         });
-        const json = await res.json();
+        const json = await res.json().catch(() => ({}));
         if (!res.ok) throw new Error(json.error || 'Failed to create task');
         showToast(
           formData.assignedDesignerId
@@ -334,7 +372,7 @@ export default function AdminTasks({
         }),
       });
 
-      const json = await res.json();
+      const json = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(json.error || 'Failed to record review');
 
       showToast(
@@ -652,8 +690,17 @@ export default function AdminTasks({
                     <h3 className="text-base font-bold text-white tracking-tight hover:text-[#FF4D00] transition-colors cursor-pointer" onClick={() => setSelectedTask(task)}>
                       {task.title}
                     </h3>
-                    <p className="text-xs text-[#A3A3A3] mt-0.5">
-                      Client: <strong className="text-white">{task.client}</strong> • Deliverables: {task.deliverables}
+                    <p className="text-xs text-[#A3A3A3] mt-0.5 flex flex-wrap items-center gap-x-2">
+                      <span>Client: <strong className="text-white">{task.client}</strong></span>
+                      {task.serviceCategory && (
+                        <span className="text-[#FF4D00] font-medium">• Service: {task.serviceCategory}</span>
+                      )}
+                      {task.rate !== undefined && (
+                        <span className="text-emerald-400 font-mono font-bold">• Rate: ₹{task.rate.toLocaleString()}</span>
+                      )}
+                      {task.deliverables && (
+                        <span>• Deliverables: {task.deliverables}</span>
+                      )}
                     </p>
                   </div>
 
@@ -985,6 +1032,60 @@ export default function AdminTasks({
                     </div>
                   )}
 
+                  {/* Client Details & Service Profile Card */}
+                  {(selectedTask.client || selectedTask.serviceCategory || selectedTask.clientCompany || selectedTask.clientPhone) && (
+                    <div className="p-4 rounded-2xl bg-[#141414] border border-[#FF4D00]/30 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Building className="w-4 h-4 text-[#FF4D00]" />
+                          <span className="text-xs uppercase font-bold text-white tracking-wider">
+                            Client & Service Details
+                          </span>
+                        </div>
+                        {selectedTask.serviceCategory && (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#FF4D00]/15 text-[#FF4D00] border border-[#FF4D00]/30 uppercase">
+                            {selectedTask.serviceCategory}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <span className="text-[10px] uppercase text-[#737373] block">Client / Brand</span>
+                          <span className="font-bold text-white text-sm">{selectedTask.client}</span>
+                          {selectedTask.clientCompany && (
+                            <span className="text-[#A3A3A3] block text-[11px] mt-0.5">{selectedTask.clientCompany}</span>
+                          )}
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase text-[#737373] block">Work Rate</span>
+                          <span className="font-mono font-bold text-emerald-400 text-sm">₹{(selectedTask.rate ?? 300).toLocaleString()} INR</span>
+                        </div>
+                        {(selectedTask.clientPhone || selectedTask.clientEmail || selectedTask.clientAddress) && (
+                          <div className="sm:col-span-2 flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-[#A3A3A3] pt-2 border-t border-white/5">
+                            {selectedTask.clientPhone && (
+                              <span className="flex items-center gap-1">
+                                <Phone className="w-3 h-3 text-[#FF4D00]" />
+                                {selectedTask.clientPhone}
+                              </span>
+                            )}
+                            {selectedTask.clientEmail && (
+                              <span className="flex items-center gap-1">
+                                <Mail className="w-3 h-3 text-[#FF4D00]" />
+                                {selectedTask.clientEmail}
+                              </span>
+                            )}
+                            {selectedTask.clientAddress && (
+                              <span className="flex items-center gap-1 w-full text-[10px] text-[#737373]">
+                                <MapPin className="w-3 h-3 text-[#FF4D00] flex-shrink-0" />
+                                {selectedTask.clientAddress}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="space-y-2">
                     <h4 className="text-xs uppercase font-bold tracking-wider text-[#FF4D00]">
                       Creative Brief & Instructions
@@ -1107,6 +1208,7 @@ export default function AdminTasks({
             </div>
 
             <form onSubmit={handleSaveTask} className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+              {/* Work Title & Service Offering */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
@@ -1115,7 +1217,7 @@ export default function AdminTasks({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Nocturne Gin Minimalist Label System"
+                    placeholder="e.g. Poster Design of Baithul Rasa"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
@@ -1123,16 +1225,111 @@ export default function AdminTasks({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                    Client / Brand Name *
+                  <label className="block text-xs uppercase font-semibold text-[#FF4D00] flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5" />
+                    <span>Service Offering / Category *</span>
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Nocturne Distillers Co."
-                    value={formData.client}
-                    onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                  <select
+                    value={formData.serviceCategory}
+                    onChange={(e) => {
+                      const selected = STUDIO_SERVICES.find((s) => s.name === e.target.value);
+                      setFormData({
+                        ...formData,
+                        serviceCategory: e.target.value,
+                        rate: selected ? selected.defaultRate : formData.rate,
+                      });
+                    }}
                     className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  >
+                    {STUDIO_SERVICES.map((s) => (
+                      <option key={s.name} value={s.name}>
+                        {s.name} (Std: ₹{s.defaultRate.toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* CLIENT DETAILS & BILLING RECIPIENT SECTION */}
+              <div className="p-4 rounded-2xl bg-[#120a0a] border border-[#FF4D00]/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono uppercase font-bold tracking-wider text-[#FF4D00] flex items-center gap-1.5">
+                    <Building className="w-3.5 h-3.5" />
+                    <span>Client Details & Billing Information</span>
+                  </span>
+                  <span className="text-[10px] text-[#A3A3A3]">Auto-populates on client invoice</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                      <User className="w-3 h-3 text-[#FF4D00]" />
+                      <span>Client / Brand Name *</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Baithul Rasa"
+                      value={formData.client}
+                      onChange={(e) => setFormData({ ...formData, client: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                      <Building className="w-3 h-3 text-[#FF4D00]" />
+                      <span>Company / Entity Name</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Baithul Rasa Hospitality & Estate"
+                      value={formData.clientCompany}
+                      onChange={(e) => setFormData({ ...formData, clientCompany: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                      <Phone className="w-3 h-3 text-[#FF4D00]" />
+                      <span>Client Phone Number / WhatsApp</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +91 9544931226"
+                      value={formData.clientPhone}
+                      onChange={(e) => setFormData({ ...formData, clientPhone: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                      <Mail className="w-3 h-3 text-[#FF4D00]" />
+                      <span>Client Email Address</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="e.g. billing@baithulrasa.com"
+                      value={formData.clientEmail}
+                      onChange={(e) => setFormData({ ...formData, clientEmail: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 pt-1">
+                  <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-[#FF4D00]" />
+                    <span>Client Billing Address</span>
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="e.g. 270 5th Avenue, Calicut, Kerala, India"
+                    value={formData.clientAddress}
+                    onChange={(e) => setFormData({ ...formData, clientAddress: e.target.value })}
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#181818] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
                   />
                 </div>
               </div>
@@ -1241,58 +1438,86 @@ export default function AdminTasks({
               </div>
 
               {/* Work Rate (for Client Invoice), Assign Designer, Priority */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3] flex items-center gap-1">
-                    <span className="text-[#FF4D00] font-bold">₹</span>
-                    <span>Work Rate / Price (INR)</span>
+              <div className="p-4 rounded-2xl bg-[#141414] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs uppercase font-bold text-white flex items-center gap-1.5">
+                    <span className="text-[#FF4D00] text-sm font-black">₹</span>
+                    <span>Service Rate & Pricing (INR) *</span>
                   </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="50"
-                    placeholder="e.g. 300"
-                    value={formData.rate}
-                    onChange={(e) => setFormData({ ...formData, rate: Number(e.target.value) || 0 })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono"
-                  />
-                  <p className="text-[10px] text-[#737373]">
-                    Auto-added to client invoice upon deliverable submission.
-                  </p>
+                  <span className="text-[10px] text-[#A3A3A3]">Auto-invoiced on submission</span>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                    Assign Designer
-                  </label>
-                  <select
-                    value={formData.assignedDesignerId}
-                    onChange={(e) => setFormData({ ...formData, assignedDesignerId: e.target.value })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                  >
-                    <option value="">Available for any designer to claim</option>
-                    {designers.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.specialty})
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-[10px] text-[#737373] uppercase font-semibold">Quick Presets:</span>
+                  {[300, 500, 800, 1000, 1500, 2000, 3500].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, rate: preset })}
+                      className={`px-3 py-1 rounded-full text-xs font-mono font-bold transition-all ${
+                        formData.rate === preset
+                          ? 'bg-[#FF4D00] text-black shadow-md'
+                          : 'bg-white/5 hover:bg-white/15 text-white border border-white/10'
+                      }`}
+                    >
+                      ₹{preset.toLocaleString()}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="block text-xs uppercase font-semibold text-[#A3A3A3]">
-                    Priority
-                  </label>
-                  <select
-                    value={formData.priority}
-                    onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#141414] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
-                  >
-                    <option value="low">Low Priority</option>
-                    <option value="medium">Medium Priority</option>
-                    <option value="high">High Priority</option>
-                    <option value="urgent">Urgent Priority</option>
-                  </select>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
+                      Custom Rate (INR)
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-2.5 text-xs font-bold text-[#FF4D00]">₹</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="50"
+                        required
+                        placeholder="300"
+                        value={formData.rate}
+                        onChange={(e) => setFormData({ ...formData, rate: Number(e.target.value) || 0 })}
+                        className="w-full pl-8 pr-4 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00] font-mono font-bold"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
+                      Assign Designer
+                    </label>
+                    <select
+                      value={formData.assignedDesignerId}
+                      onChange={(e) => setFormData({ ...formData, assignedDesignerId: e.target.value })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    >
+                      <option value="">Available for any designer</option>
+                      {designers.map((d) => (
+                        <option key={d.id} value={d.id}>
+                          {d.name} ({d.specialty})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
+                      Priority
+                    </label>
+                    <select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                    >
+                      <option value="low">Low Priority</option>
+                      <option value="medium">Medium Priority</option>
+                      <option value="high">High Priority</option>
+                      <option value="urgent">Urgent Priority</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

@@ -322,12 +322,29 @@ export default function AdminOverview({
                     </div>
                     <div className="text-left">
                       <span className="block text-white font-bold">Upload & Assign Work</span>
-                      <span className="block text-[10px] text-[#A3A3A3] font-normal">Add text copy, attach images, PNG & PDF</span>
+                      <span className="block text-[10px] text-[#A3A3A3] font-normal">Add client details, service type, rate (INR) & brief</span>
                     </div>
                   </div>
                   <ArrowUpRight className="w-4 h-4 text-[#FF4D00] group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => onNavigateTab('billing')}
+                className="flex items-center justify-between p-3.5 rounded-xl bg-[#0a0a0a] hover:bg-[#1a1a1a] border border-white/10 text-xs font-semibold text-white transition-colors group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-400 flex items-center justify-center">
+                    <Receipt className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <span className="block text-white font-bold">Client Invoicing & Billing</span>
+                    <span className="block text-[10px] text-[#A3A3A3] font-normal">Manage client details, services, rates & print invoices</span>
+                  </div>
+                </div>
+                <ArrowUpRight className="w-4 h-4 text-[#737373] group-hover:text-emerald-400 transition-colors" />
+              </button>
 
               <button
                 type="button"

@@ -337,7 +337,7 @@ export default function AudioVoiceControl({
           body: formData,
         });
         if (res.ok) {
-          json = await res.json();
+          json = await res.json().catch(() => ({}));
         }
       } catch (e) {
         console.warn('[Audio Upload] primary endpoint failed, trying fallback:', e);
@@ -351,7 +351,7 @@ export default function AudioVoiceControl({
             body: formData,
           });
           if (fallbackRes.ok) {
-            json = await fallbackRes.json();
+            json = await fallbackRes.json().catch(() => ({}));
           }
         } catch (e) {
           console.warn('[Audio Upload] /api/upload failed:', e);
@@ -422,7 +422,7 @@ export default function AudioVoiceControl({
           body: formData,
         });
         if (res.ok) {
-          json = await res.json();
+          json = await res.json().catch(() => ({}));
         }
       } catch (e) {
         console.warn('[Audio Upload] /api/tasks/upload error:', e);
@@ -436,7 +436,7 @@ export default function AudioVoiceControl({
             body: formData,
           });
           if (fallbackRes.ok) {
-            json = await fallbackRes.json();
+            json = await fallbackRes.json().catch(() => ({}));
           }
         } catch (e) {
           console.warn('[Audio Upload] /api/upload fallback error:', e);
