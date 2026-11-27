@@ -2,7 +2,7 @@ import { API_BASE } from '@/lib/apiBase';
 
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-  
+
   const headers = {
     'Content-Type': 'application/json',
     ...(options.headers || {}),

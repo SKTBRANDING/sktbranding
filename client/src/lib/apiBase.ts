@@ -21,3 +21,4 @@ export function resolveApiUrl(path: string): string {
 export function apiFetch(input: string, init?: RequestInit): Promise<Response> {
   return fetch(resolveApiUrl(input), init);
 }
+
