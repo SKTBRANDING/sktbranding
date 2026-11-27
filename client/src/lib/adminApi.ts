@@ -1,3 +1,5 @@
+import { resolveApiUrl } from './apiBase';
+
 /**
  * Central authenticated API client for SKT Branding Studio
  * Guarantees credentials: 'include' and Bearer JWT authorization on every request
@@ -31,7 +33,9 @@ export async function adminFetch(
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  return fetch(input, {
+  const resolvedInput = typeof input === 'string' ? resolveApiUrl(input) : input;
+
+  return fetch(resolvedInput, {
     ...init,
     credentials: 'include',
     headers,

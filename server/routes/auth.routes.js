@@ -16,11 +16,13 @@ router.post('/login', async (req, res) => {
 
   const token = jwt.sign({ role: 'admin' }, JWT_SECRET, { expiresIn: '7d' });
   
+  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+
   // Set HTTP-only cookie
   res.cookie('admin_token', token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
@@ -68,7 +70,12 @@ router.post('/change-password', requireAdmin, async (req, res) => {
 
 // POST /api/auth/logout
 router.post('/logout', (req, res) => {
-  res.clearCookie('admin_token');
+  const isProd = process.env.NODE_ENV === 'production' || Boolean(process.env.VERCEL);
+  res.clearCookie('admin_token', {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+  });
   return res.json({ success: true, message: 'Logged out successfully' });
 });
 

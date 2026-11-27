@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { InstagramIcon, BehanceIcon, LinkedinIcon, TwitterXIcon } from '@/components/ui/SocialIcons';
 import { AgencySettings, WebsiteContent, ServiceItem } from '@/types';
+import { apiFetch } from '@/lib/apiBase';
 
 interface ContactSectionProps {
   content: WebsiteContent['finalCta'];
@@ -97,7 +98,7 @@ export default function ContactSection({
     setLoading(true);
 
     try {
-      const res = await fetch('/api/inquiries', {
+      const res = await apiFetch('/api/inquiries', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

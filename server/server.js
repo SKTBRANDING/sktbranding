@@ -29,11 +29,35 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 // Connect to MongoDB
 connectDB();
 
+const allowedOrigins = new Set(
+  [
+    ...(CLIENT_URL ? CLIENT_URL.split(',').map((s) => s.trim()) : []),
+    ...(process.env.NEXT_PUBLIC_APP_URL ? [process.env.NEXT_PUBLIC_APP_URL.trim()] : []),
+    'https://www.sktbranding.com',
+    'https://sktbranding.com',
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+  ].filter(Boolean)
+);
+
 // Middleware
 app.use(
   cors({
-    origin: [CLIENT_URL, 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (
+        allowedOrigins.has(origin) ||
+        /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin) ||
+        /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(origin)
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-designer-token'],
   })
 );
 app.use(express.json({ limit: '100mb' }));

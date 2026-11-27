@@ -5,6 +5,7 @@ import AdminRoot from './components/admin/AdminRoot';
 import DesignerRoot from './components/designer/DesignerRoot';
 import { initialData as fallbackData } from './lib/initialData';
 import { api } from './api';
+import { apiFetch } from './lib/apiBase';
 
 // ==========================================
 // 1. Public Website Page Component
@@ -66,7 +67,7 @@ function AdminPage() {
       try {
         const savedToken = typeof window !== 'undefined' ? localStorage.getItem('skt_admin_token') : null;
         const authHeaders = savedToken ? { Authorization: `Bearer ${savedToken}` } : {};
-        const authRes = await fetch('/api/auth/me', { credentials: 'include', headers: authHeaders });
+        const authRes = await apiFetch('/api/auth/me', { credentials: 'include', headers: authHeaders });
         const authJson = await authRes.json().catch(() => ({}));
         if (isMounted && authJson.authenticated) {
           setIsAuthenticated(true);
@@ -75,16 +76,16 @@ function AdminPage() {
         // Fetch current studio dataset
         const [projects, services, content, settings, testimonials, inquiries, tasks, designers, invoices, clients] =
           await Promise.all([
-            fetch('/api/projects?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/services?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/content', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/settings', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/testimonials?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/inquiries', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/tasks', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/designers', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/invoices', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
-            fetch('/api/clients', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/projects?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/services?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/content', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/settings', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/testimonials?all=true', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/inquiries', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/tasks', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/designers', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/invoices', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
+            apiFetch('/api/clients', { credentials: 'include', headers: authHeaders }).then((r) => r.json()).catch(() => null),
           ]);
 
         if (isMounted) {

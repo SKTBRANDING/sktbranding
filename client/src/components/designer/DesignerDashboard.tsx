@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import { apiFetch } from '@/lib/apiBase';
 import {
   Briefcase,
   Layers,
@@ -249,7 +250,7 @@ export default function DesignerDashboard({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-designer-token'] = token;
 
-      const res = await fetch(`/api/tasks/${task.id}/claim`, {
+      const res = await apiFetch(`/api/tasks/${task.id}/claim`, {
         method: 'POST',
         headers,
         credentials: 'include',
@@ -303,7 +304,7 @@ export default function DesignerDashboard({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-designer-token'] = token;
 
-      const res = await fetch(`/api/tasks/${task.id}/start`, {
+      const res = await apiFetch(`/api/tasks/${task.id}/start`, {
         method: 'POST',
         headers,
         credentials: 'include',
@@ -347,9 +348,10 @@ export default function DesignerDashboard({
         formData.append('file', file);
         formData.append('category', getCategory(file.name, file.type));
 
-        const res = await fetch('/api/upload', {
+        const res = await apiFetch('/api/upload', {
           method: 'POST',
           headers: token ? { 'x-designer-token': token } : {},
+          credentials: 'include',
           body: formData,
         });
 
@@ -409,7 +411,7 @@ export default function DesignerDashboard({
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['x-designer-token'] = token;
 
-      const res = await fetch(`/api/tasks/${selectedTask.id}/submit`, {
+      const res = await apiFetch(`/api/tasks/${selectedTask.id}/submit`, {
         method: 'POST',
         headers,
         credentials: 'include',

@@ -17,6 +17,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { TaskAttachment } from '@/types';
+import { apiFetch } from '@/lib/apiBase';
 
 // ==========================================
 // 1. Sleek Audio Player Component
@@ -330,7 +331,7 @@ export default function AudioVoiceControl({
 
       let json: any = null;
       try {
-        const res = await fetch('/api/tasks/upload', {
+        const res = await apiFetch('/api/tasks/upload', {
           method: 'POST',
           headers,
           credentials: 'include',
@@ -345,7 +346,7 @@ export default function AudioVoiceControl({
 
       if (!json || !json.url) {
         try {
-          const fallbackRes = await fetch('/api/upload', {
+          const fallbackRes = await apiFetch('/api/upload', {
             method: 'POST',
             credentials: 'include',
             body: formData,
@@ -415,7 +416,7 @@ export default function AudioVoiceControl({
 
       let json: any = null;
       try {
-        const res = await fetch('/api/tasks/upload', {
+        const res = await apiFetch('/api/tasks/upload', {
           method: 'POST',
           headers,
           credentials: 'include',
@@ -430,7 +431,7 @@ export default function AudioVoiceControl({
 
       if (!json || !json.url) {
         try {
-          const fallbackRes = await fetch('/api/upload', {
+          const fallbackRes = await apiFetch('/api/upload', {
             method: 'POST',
             credentials: 'include',
             body: formData,

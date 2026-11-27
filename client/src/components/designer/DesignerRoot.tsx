@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Designer, Task } from '@/types';
+import { apiFetch } from '@/lib/apiBase';
 import DesignerAccessScreen from './DesignerAccessScreen';
 import DesignerDashboard from './DesignerDashboard';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -56,9 +57,10 @@ export default function DesignerRoot({
   const handleVerifyToken = async (token: string): Promise<boolean> => {
     setLoading(true);
     try {
-      const res = await fetch('/api/designer/auth', {
+      const res = await apiFetch('/api/designer/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ token }),
       });
 
@@ -92,7 +94,7 @@ export default function DesignerRoot({
       if (savedToken) {
         headers['x-designer-token'] = savedToken;
       }
-      const res = await fetch('/api/tasks', { headers });
+      const res = await apiFetch('/api/tasks', { headers, credentials: 'include' });
       if (res.ok) {
         const data = await res.json().catch(() => null);
         if (Array.isArray(data)) {
@@ -106,7 +108,7 @@ export default function DesignerRoot({
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/designer/auth', { method: 'DELETE' });
+      await apiFetch('/api/designer/auth', { method: 'DELETE', credentials: 'include' });
     } catch (err) {
       console.error('Logout error:', err);
     } finally {

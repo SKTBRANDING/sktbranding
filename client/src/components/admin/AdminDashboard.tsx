@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { DatabaseSchema, Inquiry, Client } from '@/types';
 import { clearAdminToken, adminFetch } from '@/lib/adminApi';
+import { apiFetch } from '@/lib/apiBase';
 import AdminOverview from './AdminOverview';
 import AdminProjects from './AdminProjects';
 import AdminServices from './AdminServices';
@@ -178,7 +179,7 @@ export default function AdminDashboard({ initialData, onLogout }: AdminDashboard
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+      await apiFetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     } catch (err) {
       console.error('Logout error:', err);
     } finally {

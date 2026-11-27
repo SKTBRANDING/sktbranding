@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Lock, ArrowRight, Eye, EyeOff, ShieldCheck, Sparkles, Database } from 'lucide-react';
 import { setAdminToken } from '@/lib/adminApi';
+import { apiFetch } from '@/lib/apiBase';
 
 interface AdminLoginProps {
   onLoginSuccess: () => void;
@@ -21,9 +22,10 @@ export default function AdminLogin({ onLoginSuccess }: AdminLoginProps) {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await apiFetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ password }),
       });
 
