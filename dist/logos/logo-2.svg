@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 50" fill="none">
-  <rect x="8" y="18" width="3" height="14" rx="1.5" fill="#FF4D00"/>
-  <rect x="14" y="12" width="3" height="26" rx="1.5" fill="#F5F5F5"/>
-  <rect x="20" y="8" width="3" height="34" rx="1.5" fill="#FF4D00"/>
-  <rect x="26" y="15" width="3" height="20" rx="1.5" fill="#F5F5F5"/>
-  <text x="38" y="27" font-family="'Plus Jakarta Sans', sans-serif" font-size="14" font-weight="900" letter-spacing="4" fill="#F5F5F5">KROMOS</text>
-  <text x="38" y="38" font-family="'Plus Jakarta Sans', sans-serif" font-size="7" font-weight="600" letter-spacing="2" fill="#A3A3A3">SOUNDWORKS</text>
-</svg>

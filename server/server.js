@@ -41,7 +41,7 @@ app.use(express.urlencoded({ extended: true, limit: '100mb' }));
 app.use(cookieParser());
 
 // Static uploads serving with WebP auto-rewrite & 1-year immutable caching
-const uploadsPath = path.join(__dirname, '..', 'public', 'uploads');
+const uploadsPath = path.join(__dirname, 'public', 'uploads');
 app.use(
   '/uploads',
   (req, res, next) => {
@@ -95,9 +95,8 @@ app.use('/api/clients', clientRoutes);
 app.use('/api/reports', reportRoutes);
 
 // Static client production build serving
-const distPath = path.join(__dirname, '..', 'dist');
 const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
-const staticPath = fs.existsSync(distPath) ? distPath : (fs.existsSync(clientDistPath) ? clientDistPath : null);
+const staticPath = fs.existsSync(clientDistPath) ? clientDistPath : null;
 if (staticPath) {
   app.use(express.static(staticPath));
   app.get('*', (req, res, next) => {

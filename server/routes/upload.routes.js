@@ -6,8 +6,7 @@ const crypto = require('crypto');
 const { upload } = require('../middleware/upload');
 const { isCloudinaryConfigured, uploadToCloudinary } = require('../config/cloudinary');
 
-const PUBLIC_UPLOADS = path.join(__dirname, '..', '..', 'public', 'uploads');
-const DIST_UPLOADS = path.join(__dirname, '..', '..', 'dist', 'uploads');
+const PUBLIC_UPLOADS = path.join(__dirname, '..', 'public', 'uploads');
 
 async function processSingleFile(file) {
   if (!file || !file.buffer) {
@@ -41,13 +40,6 @@ async function processSingleFile(file) {
 
     if (!fs.existsSync(PUBLIC_UPLOADS)) fs.mkdirSync(PUBLIC_UPLOADS, { recursive: true });
     fs.writeFileSync(path.join(PUBLIC_UPLOADS, filename), file.buffer);
-
-    // Also copy to dist/uploads if dist exists so Vite static server has it immediately
-    if (fs.existsSync(DIST_UPLOADS)) {
-      try {
-        fs.writeFileSync(path.join(DIST_UPLOADS, filename), file.buffer);
-      } catch {}
-    }
 
     return {
       url: `/uploads/${filename}`,

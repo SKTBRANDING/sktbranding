@@ -47,8 +47,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   const ext = path.extname(req.file.originalname).toLowerCase();
   const safeBase = path.basename(req.file.originalname, ext).replace(/[^a-zA-Z0-9_\-\.]/g, '_').slice(0, 30);
   const filename = `${crypto.randomUUID().slice(0, 10)}_${safeBase}${ext}`;
-  const targetDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'tasks');
-  const distDir = path.join(__dirname, '..', '..', 'dist', 'uploads', 'tasks');
+  const targetDir = path.join(__dirname, '..', 'public', 'uploads', 'tasks');
 
   let finalUrl = '';
   let storageType = 'local';
@@ -56,14 +55,6 @@ router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
     fs.writeFileSync(path.join(targetDir, filename), req.file.buffer);
-
-    // Also mirror to dist/uploads/tasks if dist directory exists
-    try {
-      if (fs.existsSync(path.join(__dirname, '..', '..', 'dist'))) {
-        if (!fs.existsSync(distDir)) fs.mkdirSync(distDir, { recursive: true });
-        fs.writeFileSync(path.join(distDir, filename), req.file.buffer);
-      }
-    } catch {}
 
     finalUrl = `/uploads/tasks/${filename}`;
   } catch (err) {

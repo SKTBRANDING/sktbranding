@@ -2,16 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 
-// Bundled static database reference so @vercel/nft automatically bundles data/db.json
 let bundledDb = null;
 try {
-  bundledDb = require('../../data/db.json');
+  bundledDb = require('../data/db.json');
 } catch (e) {
-  try {
-    bundledDb = require('../data/db.json');
-  } catch (e2) {
-    // bundled db will be loaded from disk candidates
-  }
+  // bundled db will be loaded from disk candidates
 }
 
 const DEFAULT_DESIGNERS = [
@@ -58,9 +53,8 @@ function getJsonDb() {
 
   // Attempt reading from potential filesystem paths
   const candidatePaths = [
-    path.join(__dirname, '..', '..', 'data', 'db.json'),
-    path.join(process.cwd(), 'data', 'db.json'),
     path.join(__dirname, '..', 'data', 'db.json'),
+    path.join(process.cwd(), 'data', 'db.json'),
     path.join(process.cwd(), 'server', 'data', 'db.json'),
   ];
 
@@ -115,8 +109,9 @@ function saveJsonDb(updater) {
     memoryDb = updated;
 
     const candidatePaths = [
-      path.join(__dirname, '..', '..', 'data', 'db.json'),
+      path.join(__dirname, '..', 'data', 'db.json'),
       path.join(process.cwd(), 'data', 'db.json'),
+      path.join(process.cwd(), 'server', 'data', 'db.json'),
     ];
 
     for (const candidate of candidatePaths) {

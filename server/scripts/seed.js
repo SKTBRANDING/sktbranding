@@ -16,7 +16,7 @@ const Content = require('../models/Content');
 async function seedDatabase() {
   await connectDB();
 
-  const dbPath = path.join(__dirname, '..', '..', 'data', 'db.json');
+  const dbPath = path.join(__dirname, '..', 'data', 'db.json');
   if (!fs.existsSync(dbPath)) {
     console.error(`[Seed] data/db.json not found at ${dbPath}`);
     process.exit(1);

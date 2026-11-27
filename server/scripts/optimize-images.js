@@ -4,8 +4,8 @@ const sharp = require('sharp');
 const mongoose = require('mongoose');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const UPLOADS_DIR = path.join(__dirname, '..', '..', 'public', 'uploads');
-const DB_JSON_PATH = path.join(__dirname, '..', '..', 'data', 'db.json');
+const UPLOADS_DIR = path.join(__dirname, '..', 'public', 'uploads');
+const DB_JSON_PATH = path.join(__dirname, '..', 'data', 'db.json');
 
 async function optimizeImages() {
   console.log('=== SKT BRANDING IMAGE ACCELERATOR ===');
