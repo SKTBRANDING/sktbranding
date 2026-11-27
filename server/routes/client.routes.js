@@ -56,13 +56,14 @@ router.get('/', async (req, res) => {
 // POST /api/clients
 router.post('/', async (req, res) => {
   try {
-    const { name, company, phone, email, address, notes, serviceRates } = req.body;
+    const { name, logo, company, phone, email, address, notes, serviceRates } = req.body;
     if (!name || !name.trim()) {
       return res.status(400).json({ error: 'Client name is required.' });
     }
 
     const clientPayload = {
       name: name.trim(),
+      logo: (logo || '').trim(),
       company: (company || '').trim(),
       phone: (phone || '').trim(),
       email: (email || '').trim().toLowerCase(),
@@ -110,10 +111,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, company, phone, email, address, notes, serviceRates } = req.body;
+    const { name, logo, company, phone, email, address, notes, serviceRates } = req.body;
 
     const updatePayload = {
       ...(name ? { name: name.trim() } : {}),
+      ...(logo !== undefined ? { logo: String(logo).trim() } : {}),
       ...(company !== undefined ? { company: company.trim() } : {}),
       ...(phone !== undefined ? { phone: phone.trim() } : {}),
       ...(email !== undefined ? { email: email.trim().toLowerCase() } : {}),

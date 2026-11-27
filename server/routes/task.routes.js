@@ -7,6 +7,7 @@ const Task = require('../models/Task');
 const Designer = require('../models/Designer');
 const Invoice = require('../models/Invoice');
 const Client = require('../models/Client');
+const ClientReport = require('../models/ClientReport');
 const { requireAdmin, requireDesigner, requireAnyAuth } = require('../middleware/auth');
 const { upload, getFileCategory } = require('../middleware/upload');
 const { isCloudinaryConfigured, uploadToCloudinary } = require('../config/cloudinary');
@@ -298,6 +299,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
 
           if (task.status === 'completed' && !wasCompleted) {
             await recordApprovedTaskToClientInvoice(task);
+            await recordApprovedTaskToClientReport(task);
           }
 
           return res.json(task);
@@ -326,6 +328,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Task not found' });
     if (shouldRecordBilling) {
       await recordApprovedTaskToClientInvoice(updated);
+      await recordApprovedTaskToClientReport(updated);
     }
     return res.json(updated);
   } catch (err) {
@@ -755,6 +758,203 @@ async function recordApprovedTaskToClientInvoice(task) {
 }
 
 // ==========================================
+// Helper: Automatically Accumulate Deliverables on Client Presentation Report Upon Admin Approval
+// ==========================================
+async function recordApprovedTaskToClientReport(task) {
+  try {
+    if (!task) return;
+    const rawClientName = (task.client || '').trim();
+    if (!rawClientName) return;
+
+    // Extract all approved deliverable images
+    const submissionFiles = task.submissions?.[0]?.files || [];
+    const referenceFiles = task.referenceFiles || [];
+    const allFiles = [...submissionFiles, ...referenceFiles];
+    const imageFiles = allFiles.filter((f) => {
+      if (!f || !f.url) return false;
+      return (
+        f.category === 'image' ||
+        (f.type && f.type.includes('image')) ||
+        /\.(png|jpg|jpeg|webp|gif|svg)$/i.test(f.url)
+      );
+    });
+
+    if (imageFiles.length === 0) return;
+
+    const rawKey = cleanStringKey(rawClientName);
+    const category = (task.serviceCategory || task.serviceName || 'Design Deliverables').trim();
+    const serviceTitle = getStandardServiceName(category, task.title);
+
+    // Resolve registered client for name & logo
+    let clientRecord = null;
+    if (isMongoConnected()) {
+      try {
+        const allClients = await Client.find();
+        clientRecord = allClients.find((c) => {
+          const cKey = cleanStringKey(c.name);
+          const compKey = cleanStringKey(c.company);
+          return cKey === rawKey || compKey === rawKey ||
+                 (rawKey.length >= 4 && (cKey.includes(rawKey) || rawKey.includes(cKey)));
+        });
+      } catch (err) {}
+    }
+
+    const jsonDb = getJsonDb();
+    const dbClient = (jsonDb.clients || []).find((c) => {
+      const cKey = cleanStringKey(c.name);
+      const compKey = cleanStringKey(c.company);
+      return cKey === rawKey || compKey === rawKey ||
+             (rawKey.length >= 4 && (cKey.includes(rawKey) || rawKey.includes(cKey)));
+    });
+
+    const canonicalClientName = (clientRecord && clientRecord.name) || (dbClient && dbClient.name) || rawClientName.toUpperCase();
+    const canonicalClientId = (clientRecord && clientRecord.id) || (dbClient && dbClient.id) || '';
+    const canonicalClientLogo = (clientRecord && clientRecord.logo) || (dbClient && dbClient.logo) || '';
+
+    const now = new Date();
+    const monthName = now.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    const targetKey = cleanStringKey(canonicalClientName);
+
+    const isMatchingReport = (r) => {
+      if (!r) return false;
+      const rKey = cleanStringKey(r.clientName);
+      return (
+        (canonicalClientId && r.clientId === canonicalClientId) ||
+        rKey === targetKey ||
+        (rKey.length >= 4 && (rKey.includes(targetKey) || targetKey.includes(rKey)))
+      );
+    };
+
+    const newDeliverableItems = imageFiles.map((f) => ({
+      id: `item-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
+      taskId: task.id,
+      title: task.title || serviceTitle,
+      imageUrl: f.url,
+      category: category,
+      dimensions: task.dimensions || '',
+    }));
+
+    // Ingest into Mongo
+    if (isMongoConnected()) {
+      try {
+        let report = await ClientReport.findOne({
+          $or: [
+            { clientId: canonicalClientId },
+            { clientName: new RegExp(`^${canonicalClientName}$`, 'i') },
+          ],
+        }).sort({ updatedAt: -1 });
+
+        if (!report) {
+          report = new ClientReport({
+            id: `rep-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+            clientId: canonicalClientId,
+            clientName: canonicalClientName,
+            clientLogo: canonicalClientLogo,
+            reportMonth: monthName,
+            reportTitle: `${canonicalClientName} MONTHLY REPORT`,
+            executiveSummaryTitle: `Social Media Report – ${monthName}`,
+            executiveSummaryText: `We take immense pride in presenting the comprehensive visual deliverables and creative campaign progress executed across this billing cycle. Every assignment was strategically developed to elevate brand recall, reinforce market authority, and drive targeted consumer engagement across digital touchpoints.\n\nOur creative trajectory continues to prioritize strategic visual direction, coherent brand aesthetics, and maximum campaign resonance. Consistent aesthetics and high-fidelity typography selections across all creative formats have solidified an unmistakable and polished visual identity. Visual cohesion is paramount in capturing consumer mindshare, and this month's execution guarantees prominent standing against regional competition.`,
+            sections: [],
+            thankYouTitle: 'THANK YOU',
+            status: 'finalized',
+            theme: {
+              coverBackground: 'dark_gradient',
+              pageBackground: '#FAF7F2',
+              primaryColor: '#D60000',
+              textColor: '#1A1A1A',
+            },
+          });
+        }
+
+        if (canonicalClientLogo && !report.clientLogo) {
+          report.clientLogo = canonicalClientLogo;
+        }
+
+        if (!Array.isArray(report.sections)) report.sections = [];
+        let section = report.sections.find((s) => s.title.toUpperCase() === serviceTitle.toUpperCase());
+        if (section) {
+          newDeliverableItems.forEach((newItem) => {
+            if (!section.items.some((it) => it.imageUrl === newItem.imageUrl)) {
+              section.items.push(newItem);
+            }
+          });
+        } else {
+          report.sections.push({
+            id: `sec-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
+            title: serviceTitle,
+            category: category,
+            items: newDeliverableItems,
+          });
+        }
+
+        await report.save();
+      } catch (mongoErr) {
+        console.warn('[Task Route] Error recording report in Mongo:', mongoErr.message);
+      }
+    }
+
+    // Always sync to JSON DB fallback
+    saveJsonDb((db) => {
+      if (!Array.isArray(db.reports)) db.reports = [];
+      let report = db.reports.find(isMatchingReport);
+
+      if (!report) {
+        report = {
+          id: `rep-${Date.now()}-${crypto.randomUUID().slice(0, 8)}`,
+          clientId: canonicalClientId,
+          clientName: canonicalClientName,
+          clientLogo: canonicalClientLogo,
+          reportMonth: monthName,
+          reportTitle: `${canonicalClientName} MONTHLY REPORT`,
+          executiveSummaryTitle: `Social Media Report – ${monthName}`,
+          executiveSummaryText: `We take immense pride in presenting the comprehensive visual deliverables and creative campaign progress executed across this billing cycle. Every assignment was strategically developed to elevate brand recall, reinforce market authority, and drive targeted consumer engagement across digital touchpoints.\n\nOur creative trajectory continues to prioritize strategic visual direction, coherent brand aesthetics, and maximum campaign resonance. Consistent aesthetics and high-fidelity typography selections across all creative formats have solidified an unmistakable and polished visual identity. Visual cohesion is paramount in capturing consumer mindshare, and this month's execution guarantees prominent standing against regional competition.`,
+          sections: [],
+          thankYouTitle: 'THANK YOU',
+          status: 'finalized',
+          theme: {
+            coverBackground: 'dark_gradient',
+            pageBackground: '#FAF7F2',
+            primaryColor: '#D60000',
+            textColor: '#1A1A1A',
+          },
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
+        };
+        db.reports.unshift(report);
+      }
+
+      if (canonicalClientLogo && !report.clientLogo) {
+        report.clientLogo = canonicalClientLogo;
+      }
+
+      if (!Array.isArray(report.sections)) report.sections = [];
+      let section = report.sections.find((s) => s.title.toUpperCase() === serviceTitle.toUpperCase());
+      if (section) {
+        newDeliverableItems.forEach((newItem) => {
+          if (!section.items.some((it) => it.imageUrl === newItem.imageUrl)) {
+            section.items.push(newItem);
+          }
+        });
+      } else {
+        report.sections.push({
+          id: `sec-${Date.now()}-${crypto.randomUUID().slice(0, 4)}`,
+          title: serviceTitle,
+          category: category,
+          items: newDeliverableItems,
+        });
+      }
+
+      report.updatedAt = new Date().toISOString();
+      return db;
+    });
+
+    console.log(`[Report Ingestion Success] Added ${newDeliverableItems.length} deliverable(s) for task "${task.title}" to client report for ${canonicalClientName} under section "${serviceTitle}".`);
+  } catch (err) {
+    console.warn('[Task Route] recordApprovedTaskToClientReport error:', err.message);
+  }
+}
+
+// ==========================================
 // POST /api/tasks/:id/submit (Designer Submit Deliverables & Voice Walkthrough)
 // ==========================================
 router.post('/:id/submit', requireDesigner, async (req, res) => {
@@ -889,6 +1089,7 @@ router.post('/:id/review', requireAdmin, async (req, res) => {
 
           if (action === 'approve') {
             await recordApprovedTaskToClientInvoice(task);
+            await recordApprovedTaskToClientReport(task);
           }
 
           return res.json({
@@ -933,6 +1134,7 @@ router.post('/:id/review', requireAdmin, async (req, res) => {
 
     if (action === 'approve') {
       await recordApprovedTaskToClientInvoice(updated);
+      await recordApprovedTaskToClientReport(updated);
     }
 
     return res.json({

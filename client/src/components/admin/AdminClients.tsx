@@ -145,8 +145,12 @@ export default function AdminClients({
                 {/* Client Top Header */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#FF4D00]/10 border border-[#FF4D00]/40 flex items-center justify-center text-[#FF4D00] font-black text-sm">
-                      {client.name ? client.name.charAt(0).toUpperCase() : 'C'}
+                    <div className="w-10 h-10 rounded-xl bg-[#141414] border border-[#FF4D00]/40 flex items-center justify-center text-[#FF4D00] font-black text-sm overflow-hidden flex-shrink-0">
+                      {client.logo ? (
+                        <img src={client.logo} alt={client.name} className="w-full h-full object-contain p-1" />
+                      ) : (
+                        <span>{client.name ? client.name.charAt(0).toUpperCase() : 'C'}</span>
+                      )}
                     </div>
                     <div>
                       <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">

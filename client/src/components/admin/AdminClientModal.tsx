@@ -14,6 +14,8 @@ import {
   Check,
   Sparkles,
   Tag,
+  Upload,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { Client, ClientServiceRate } from '@/types';
 import { adminFetch } from '@/lib/adminApi';
@@ -48,6 +50,8 @@ export default function AdminClientModal({
   onClientSaved,
 }: AdminClientModalProps) {
   const [name, setName] = useState('');
+  const [logo, setLogo] = useState('');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [company, setCompany] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -67,6 +71,7 @@ export default function AdminClientModal({
   useEffect(() => {
     if (editingClient) {
       setName(editingClient.name || '');
+      setLogo(editingClient.logo || '');
       setCompany(editingClient.company || '');
       setPhone(editingClient.phone || '');
       setEmail(editingClient.email || '');
@@ -82,6 +87,7 @@ export default function AdminClientModal({
       );
     } else {
       setName('');
+      setLogo('');
       setCompany('');
       setPhone('');
       setEmail('');
@@ -141,6 +147,29 @@ export default function AdminClientModal({
     );
   };
 
+  const handleUploadLogo = async (file: File) => {
+    setUploadingLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await adminFetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.url) {
+        setLogo(data.url);
+        showToast('Client logo uploaded successfully!');
+      } else {
+        throw new Error(data.error || 'Upload failed');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to upload logo', 'error');
+    } finally {
+      setUploadingLogo(false);
+    }
+  };
+
   const handleSaveClient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -152,6 +181,7 @@ export default function AdminClientModal({
     try {
       const payload = {
         name: name.trim(),
+        logo: logo.trim(),
         company: company.trim(),
         phone: phone.trim(),
         email: email.trim(),
@@ -226,6 +256,60 @@ export default function AdminClientModal({
             <div className="flex items-center gap-2 text-xs uppercase font-bold tracking-wider text-[#FF4D00]">
               <Building className="w-4 h-4" />
               <span>Client & Business Information</span>
+            </div>
+
+            {/* Client Logo Upload & Preview */}
+            <div className="p-3.5 rounded-2xl bg-[#141414] border border-white/10 flex items-center gap-4">
+              <div className="w-16 h-16 rounded-xl bg-black border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                {logo ? (
+                  <img src={logo} alt="Client Logo" className="w-full h-full object-contain p-1" />
+                ) : (
+                  <div className="w-full h-full bg-[#180400] flex flex-col items-center justify-center text-[#FF4D00]">
+                    <Building className="w-6 h-6 opacity-60" />
+                    <span className="text-[9px] uppercase font-bold mt-1">NO LOGO</span>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <label className="block text-[11px] uppercase font-semibold text-[#A3A3A3]">
+                  Client Official Logo / Brand Emblem
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs text-white cursor-pointer transition-colors">
+                    <Upload className="w-3.5 h-3.5 text-[#FF4D00]" />
+                    <span>{uploadingLogo ? 'Uploading...' : 'Upload Logo File'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingLogo}
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleUploadLogo(file);
+                      }}
+                    />
+                  </label>
+                  <input
+                    type="url"
+                    placeholder="Or paste image URL (https://...)"
+                    value={logo}
+                    onChange={(e) => setLogo(e.target.value)}
+                    className="flex-1 min-w-[180px] px-3 py-1.5 rounded-xl bg-black/60 border border-white/10 text-xs text-white focus:outline-none focus:border-[#FF4D00]"
+                  />
+                  {logo && (
+                    <button
+                      type="button"
+                      onClick={() => setLogo('')}
+                      className="text-xs text-red-400 hover:text-red-300"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-[#737373]">
+                  Used automatically on Client Monthly Presentation Reports Cover & Thank You pages.
+                </p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

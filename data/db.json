@@ -535,6 +535,26 @@
   },
   "designers": [
     {
+      "id": "des-7f89bceb",
+      "name": "SALMAN KT",
+      "email": "sktdesigns50@gmail.com",
+      "specialty": "branding designer",
+      "avatar": "",
+      "instagram": "alman__bin__moosa",
+      "phone": "9544931226",
+      "accountDetails": "",
+      "dateOfBirth": "2000-06-02",
+      "joiningDate": "2026-11-27",
+      "experienceYears": "6 year",
+      "companyCode": "skt03",
+      "address": "",
+      "token": "dsg_salman_kt_758888cbb656c7d8",
+      "status": "active",
+      "notes": "",
+      "createdAt": "2026-11-27T03:27:48.226Z",
+      "lastActiveAt": "2026-11-27T03:27:48.226Z"
+    },
+    {
       "id": "des-d8c6af6a",
       "name": "FATHIMA",
       "email": "fathiartz368@gmail.com",
@@ -551,7 +571,7 @@
       "dateOfBirth": "1999-07-16",
       "joiningDate": "2026-11-20",
       "experienceYears": "Fresher",
-      "companyCode": "skt01",
+      "companyCode": "skt02",
       "address": ""
     },
     {
@@ -571,7 +591,7 @@
       "dateOfBirth": "2004-05-04",
       "joiningDate": "2026-10-23",
       "experienceYears": "2  YEAR",
-      "companyCode": "skt02",
+      "companyCode": "skt01",
       "address": "Padu Mahal  Mogar Mogral Puthur P.0 Mogral Puthur, Kasaragod  671124"
     }
   ],
@@ -766,7 +786,192 @@
         }
       ],
       "createdAt": "2026-11-26T18:28:43.900Z",
-      "updatedAt": "2026-11-26T19:05:09.332Z"
+      "updatedAt": "2026-11-26T19:05:09.332Z",
+      "logo": "/logos/baitul-rasa-emblem.svg"
+    }
+  ],
+  "reports": [
+    {
+      "id": "rep-baithulrasa-oct2026",
+      "clientId": "client-baithulrasa",
+      "clientName": "BAITHULRASA",
+      "clientLogo": "/logos/baitul-rasa-emblem.svg",
+      "reportMonth": "October 2026",
+      "reportTitle": "BAITHULRASA MONTHLY REPORT",
+      "executiveSummaryTitle": "Social Media Report – October 2026",
+      "executiveSummaryText": "We take immense pride in presenting the comprehensive visual deliverables and creative campaign progress executed across this billing cycle. Every assignment was strategically developed to elevate brand recall, reinforce market authority, and drive targeted consumer engagement across digital touchpoints.\n\nOur creative trajectory continues to prioritize strategic visual direction, coherent brand aesthetics, and maximum campaign resonance. Consistent aesthetics and high-fidelity typography selections across all creative formats have solidified an unmistakable and polished visual identity. Visual cohesion is paramount in capturing consumer mindshare, and this month's execution guarantees prominent standing against regional competition.\n\nThrough strategic communication architecture, high-impact poster storytelling, and meticulously crafted promotional collateral, we maintained consistent brand visibility and premium market positioning. Every visual asset was engineered to resonate with core demographics, supporting measurable brand growth and sustained customer loyalty.\n\nMoving forward, our studio remains committed to introducing progressive creative assets, refined brand collateral, and forward-looking visual strategies that command lasting attention across every digital and retail medium.",
+      "sections": [
+        {
+          "id": "sec-posters-1",
+          "title": "SOCIAL MEDIA CREATIVE POSTERS",
+          "category": "SOCIAL MEDIA CREATIVE POSTERS",
+          "items": [
+            {
+              "id": "pos-1",
+              "title": "Creative Poster #1",
+              "imageUrl": "https://res.cloudinary.com/unzkhevi/image/upload/v1795720410/sktbranding/1795720406752_3.jpg",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-2",
+              "title": "Creative Poster #2",
+              "imageUrl": "/uploads/8279fce2-e_4.jpg",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-3",
+              "title": "Creative Poster #3",
+              "imageUrl": "/uploads/011b5f1a-e64e-4077-b63a-a8fd302caab8.jpg",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-4",
+              "title": "Creative Poster #4",
+              "imageUrl": "/uploads/011b5f1a-e64e-4077-b63a-a8fd302caab8.webp",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-5",
+              "title": "Creative Poster #5",
+              "imageUrl": "/uploads/016bb284-9608-4c9a-a42a-ac77d2b981d8.png",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-6",
+              "title": "Creative Poster #6",
+              "imageUrl": "/uploads/016bb284-9608-4c9a-a42a-ac77d2b981d8.webp",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-7",
+              "title": "Creative Poster #7",
+              "imageUrl": "/uploads/07e261a0-e2c7-4cc5-80f5-3a5dbb53ad29.png",
+              "category": "Poster"
+            },
+            {
+              "id": "pos-8",
+              "title": "Creative Poster #8",
+              "imageUrl": "/uploads/07e261a0-e2c7-4cc5-80f5-3a5dbb53ad29.webp",
+              "category": "Poster"
+            }
+          ]
+        },
+        {
+          "id": "sec-stickers-2",
+          "title": "RATE STICKER",
+          "category": "RATE STICKER",
+          "items": [
+            {
+              "id": "stk-1",
+              "title": "Rate Sticker #1",
+              "imageUrl": "/uploads/09c8b70d-10d3-4044-8d44-2b68a87b91b5.jpg",
+              "category": "Sticker"
+            },
+            {
+              "id": "stk-2",
+              "title": "Rate Sticker #2",
+              "imageUrl": "/uploads/09c8b70d-10d3-4044-8d44-2b68a87b91b5.webp",
+              "category": "Sticker"
+            },
+            {
+              "id": "stk-3",
+              "title": "Rate Sticker #3",
+              "imageUrl": "/uploads/0d181925-1643-4fb9-8396-13ec3c878bb2.jpg",
+              "category": "Sticker"
+            },
+            {
+              "id": "stk-4",
+              "title": "Rate Sticker #4",
+              "imageUrl": "/uploads/0d181925-1643-4fb9-8396-13ec3c878bb2.webp",
+              "category": "Sticker"
+            },
+            {
+              "id": "stk-5",
+              "title": "Rate Sticker #5",
+              "imageUrl": "/uploads/0fee3778-991a-4848-aecc-61ecdcdf6cef.png",
+              "category": "Sticker"
+            },
+            {
+              "id": "stk-6",
+              "title": "Rate Sticker #6",
+              "imageUrl": "/uploads/0fee3778-991a-4848-aecc-61ecdcdf6cef.webp",
+              "category": "Sticker"
+            }
+          ]
+        },
+        {
+          "id": "sec-menus-3",
+          "title": "MENU CARD DESIGN",
+          "category": "MENU CARD DESIGN",
+          "items": [
+            {
+              "id": "menu-1",
+              "title": "Menu Card #1",
+              "imageUrl": "/uploads/135811a0-9754-435d-85e6-0703bfeea8c6.png",
+              "category": "Menu"
+            },
+            {
+              "id": "menu-2",
+              "title": "Menu Card #2",
+              "imageUrl": "/uploads/135811a0-9754-435d-85e6-0703bfeea8c6.webp",
+              "category": "Menu"
+            },
+            {
+              "id": "menu-3",
+              "title": "Menu Card #3",
+              "imageUrl": "/uploads/1406db44-a5bc-4030-a77d-798165114353.png",
+              "category": "Menu"
+            },
+            {
+              "id": "menu-4",
+              "title": "Menu Card #4",
+              "imageUrl": "/uploads/1406db44-a5bc-4030-a77d-798165114353.webp",
+              "category": "Menu"
+            }
+          ]
+        },
+        {
+          "id": "sec-growth-4",
+          "title": "SOCIAL MEDIA GROWTH",
+          "category": "SOCIAL MEDIA GROWTH",
+          "items": [
+            {
+              "id": "grw-1",
+              "title": "Analytics & Growth #1",
+              "imageUrl": "/uploads/1555735d-6033-4381-9687-8b64a2639de7.png",
+              "category": "Growth"
+            },
+            {
+              "id": "grw-2",
+              "title": "Analytics & Growth #2",
+              "imageUrl": "/uploads/1555735d-6033-4381-9687-8b64a2639de7.webp",
+              "category": "Growth"
+            },
+            {
+              "id": "grw-3",
+              "title": "Analytics & Growth #3",
+              "imageUrl": "/uploads/18b57636-9e7f-4df1-b643-9ba2cc05e0e9.png",
+              "category": "Growth"
+            },
+            {
+              "id": "grw-4",
+              "title": "Analytics & Growth #4",
+              "imageUrl": "/uploads/18b57636-9e7f-4df1-b643-9ba2cc05e0e9.webp",
+              "category": "Growth"
+            }
+          ]
+        }
+      ],
+      "thankYouTitle": "THANK YOU",
+      "status": "finalized",
+      "theme": {
+        "coverBackground": "dark_gradient",
+        "pageBackground": "#FAF7F2",
+        "primaryColor": "#D60000",
+        "textColor": "#1A1A1A"
+      },
+      "createdAt": "2026-11-27T03:46:06.712Z",
+      "updatedAt": "2026-11-27T03:46:06.713Z"
     }
   ]
 }

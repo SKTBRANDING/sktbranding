@@ -261,12 +261,52 @@ export interface ClientServiceRate {
 export interface Client {
   id: string;
   name: string;
+  logo?: string;
   company?: string;
   phone?: string;
   email?: string;
   address?: string;
   notes?: string;
   serviceRates: ClientServiceRate[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ReportDeliverableItem {
+  id: string;
+  taskId?: string;
+  title?: string;
+  imageUrl: string;
+  category?: string;
+  dimensions?: string;
+  aspectRatio?: string;
+}
+
+export interface ReportServiceSection {
+  id: string;
+  title: string; // e.g. "SOCIAL MEDIA CREATIVE POSTERS", "RATE STICKER", "MENU CARD DESIGN", "SOCIAL MEDIA GROWTH"
+  category: string;
+  items: ReportDeliverableItem[];
+}
+
+export interface ClientReport {
+  id: string;
+  clientId?: string;
+  clientName: string; // e.g. "BAITULRASA"
+  clientLogo?: string;
+  reportMonth: string; // e.g. "October 2026", "November 2026"
+  reportTitle?: string; // e.g. "BAITULRASA MONTHLY REPORT"
+  executiveSummaryTitle?: string; // e.g. "Social Media Report – October 2026"
+  executiveSummaryText?: string; // Multi-paragraph narrative text on Page 2
+  sections: ReportServiceSection[]; // Page 3+ creative deliverables grouped by service
+  thankYouTitle?: string; // "THANK YOU"
+  status?: 'draft' | 'finalized' | 'shared';
+  theme?: {
+    coverBackground?: string;
+    pageBackground?: string;
+    primaryColor?: string;
+    textColor?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
 }
@@ -282,6 +322,7 @@ export interface DatabaseSchema {
   tasks: Task[];
   invoices?: Invoice[];
   clients?: Client[];
+  reports?: ClientReport[];
 }
 
 export type InvoiceStatus = 'draft' | 'pending' | 'partially_paid' | 'paid' | 'overdue' | 'cancelled';
