@@ -284,7 +284,7 @@ export default function ProjectModal({ project, onClose }: ProjectModalProps) {
             <a
               href="#contact"
               onClick={onClose}
-              className="px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-[#FF4D00] text-black hover:bg-[#FF7A00] transition-colors shadow-lg"
+              className="px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-black border-2 border-red-600 text-white hover:bg-red-600 transition-all shadow-[0_0_15px_rgba(220,38,38,0.25)]"
             >
               Discuss a Similar Project
             </a>

@@ -25,24 +25,24 @@ interface ServicesSectionProps {
 const getServiceIcon = (iconName: string) => {
   switch (iconName?.toLowerCase()) {
     case 'compass':
-      return <Compass className="w-6 h-6 text-[#FF4D00]" />;
+      return <Compass className="w-6 h-6 text-red-500" />;
     case 'shapes':
-      return <Shapes className="w-6 h-6 text-[#FF4D00]" />;
+      return <Shapes className="w-6 h-6 text-red-500" />;
     case 'share2':
     case 'share':
-      return <Share2 className="w-6 h-6 text-[#FF4D00]" />;
+      return <Share2 className="w-6 h-6 text-red-500" />;
     case 'package':
-      return <Package className="w-6 h-6 text-[#FF4D00]" />;
+      return <Package className="w-6 h-6 text-red-500" />;
     case 'printer':
-      return <Printer className="w-6 h-6 text-[#FF4D00]" />;
+      return <Printer className="w-6 h-6 text-red-500" />;
     case 'globe':
-      return <Globe className="w-6 h-6 text-[#FF4D00]" />;
+      return <Globe className="w-6 h-6 text-red-500" />;
     case 'layers':
-      return <Layers className="w-6 h-6 text-[#FF4D00]" />;
+      return <Layers className="w-6 h-6 text-red-500" />;
     case 'shield':
-      return <Shield className="w-6 h-6 text-[#FF4D00]" />;
+      return <Shield className="w-6 h-6 text-red-500" />;
     default:
-      return <Sparkles className="w-6 h-6 text-[#FF4D00]" />;
+      return <Sparkles className="w-6 h-6 text-red-500" />;
   }
 };
 
@@ -99,7 +99,7 @@ export default function ServicesSection({ services, onSelectService }: ServicesS
               <div className="space-y-6">
                 {/* Icon & Index Badge */}
                 <div className="flex items-center justify-between">
-                  <div className="w-14 h-14 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center group-hover:border-[#FF4D00]/40 group-hover:shadow-[0_0_20px_rgba(255,77,0,0.25)] transition-all duration-300">
+                  <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-black border-2 border-red-600/70 flex items-center justify-center group-hover:border-red-500 group-hover:shadow-[0_0_20px_rgba(220,38,38,0.4)] transition-all duration-300">
                     {getServiceIcon(service.icon)}
                   </div>
                   <span className="text-xs font-mono text-[#737373] tracking-widest">
@@ -126,7 +126,7 @@ export default function ServicesSection({ services, onSelectService }: ServicesS
                     <ul className="space-y-1.5 text-xs text-[#A3A3A3]">
                       {service.deliverables.map((item, dIdx) => (
                         <li key={dIdx} className="flex items-center gap-2">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#FF4D00] flex-shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                           <span>{item}</span>
                         </li>
                       ))}
@@ -140,10 +140,10 @@ export default function ServicesSection({ services, onSelectService }: ServicesS
                 <button
                   type="button"
                   onClick={() => handleDiscussService(service.title)}
-                  className="w-full inline-flex items-center justify-between py-2.5 px-4 rounded-xl bg-white/[0.04] hover:bg-[#FF4D00] text-xs font-semibold uppercase tracking-wider text-[#F5F5F5] hover:text-black transition-all duration-300 group/btn focus:outline-none focus:ring-2 focus:ring-[#FF4D00]"
+                  className="w-full inline-flex items-center justify-between py-3 px-5 rounded-full bg-black border-2 border-red-600 hover:bg-red-600 hover:border-red-600 text-xs font-bold uppercase tracking-wider text-white transition-all duration-300 group/btn shadow-[0_0_15px_rgba(220,38,38,0.25)] hover:shadow-[0_0_25px_rgba(220,38,38,0.5)] focus:outline-none focus:ring-2 focus:ring-red-500"
                 >
-                  <span>Discuss Your Project</span>
-                  <ArrowUpRight className="w-4 h-4 text-[#FF4D00] group-hover/btn:text-black group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-all" />
+                  <span className="text-white font-bold tracking-wider">Discuss Your Project</span>
+                  <ArrowUpRight className="w-4 h-4 text-red-500 group-hover/btn:text-white group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5 transition-all" />
                 </button>
               </div>
             </div>
