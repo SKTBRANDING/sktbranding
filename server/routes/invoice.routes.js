@@ -182,7 +182,7 @@ router.post('/', requireAdmin, async (req, res) => {
       dueDate: body.dueDate || new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       ...financials,
       status,
-      currency: (body.currency || 'USD').toUpperCase(),
+      currency: (body.currency || 'INR').toUpperCase(),
       paymentMethod: body.paymentMethod || 'bank_transfer',
       paymentDetails: (body.paymentDetails || '').trim(),
       notes: (body.notes || '').trim(),

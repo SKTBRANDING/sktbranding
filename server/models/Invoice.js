@@ -45,7 +45,7 @@ const InvoiceSchema = new mongoose.Schema(
       default: 'pending',
       index: true,
     },
-    currency: { type: String, default: 'USD', uppercase: true },
+    currency: { type: String, default: 'INR', uppercase: true },
     paymentMethod: {
       type: String,
       enum: ['bank_transfer', 'credit_card', 'upi', 'paypal', 'stripe', 'cash', 'crypto'],

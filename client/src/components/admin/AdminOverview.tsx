@@ -129,10 +129,10 @@ export default function AdminOverview({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-white tracking-tight">
-              ${invoices.reduce((acc, inv) => acc + Number(inv?.total || 0), 0).toLocaleString()}
+              ₹{invoices.reduce((acc, inv) => acc + Number(inv?.total || 0), 0).toLocaleString()}
             </span>
             <span className="text-xs text-amber-400">
-              ${invoices.reduce((acc, inv) => acc + Number(inv?.balanceDue || 0), 0).toLocaleString()} due
+              ₹{invoices.reduce((acc, inv) => acc + Number(inv?.balanceDue || 0), 0).toLocaleString()} due
             </span>
           </div>
           <span className="inline-block mt-3 text-xs text-[#FF4D00] group-hover:underline">

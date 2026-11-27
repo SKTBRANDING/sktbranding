@@ -6,7 +6,7 @@ import {
   Plus,
   Search,
   Filter,
-  DollarSign,
+  IndianRupee,
   Calendar,
   CheckCircle2,
   Clock,
@@ -44,9 +44,9 @@ interface AdminBillingProps {
 }
 
 const CURRENCY_SYMBOLS: Record<string, string> = {
-  USD: '$',
-  EUR: '€',
   INR: '₹',
+  USD: '₹',
+  EUR: '€',
   GBP: '£',
   AED: 'AED ',
 };
@@ -105,7 +105,7 @@ export default function AdminBilling({
     projectName: '',
     issueDate: new Date().toISOString().split('T')[0],
     dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    currency: 'USD',
+    currency: 'INR',
     status: 'pending',
     items: [
       {
@@ -210,7 +210,7 @@ export default function AdminBilling({
       projectName: '',
       issueDate: new Date().toISOString().split('T')[0],
       dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      currency: 'USD',
+      currency: 'INR',
       status: 'pending',
       items: [
         {
@@ -245,7 +245,7 @@ export default function AdminBilling({
       projectName: inv.projectName || '',
       issueDate: inv.issueDate || new Date().toISOString().split('T')[0],
       dueDate: inv.dueDate || new Date().toISOString().split('T')[0],
-      currency: inv.currency || 'USD',
+      currency: inv.currency || 'INR',
       status: inv.status || 'pending',
       items: Array.isArray(inv.items) && inv.items.length > 0 ? [...inv.items] : [
         {
@@ -447,7 +447,7 @@ export default function AdminBilling({
   };
 
   const handleCopyInvoiceText = (inv: Invoice) => {
-    const symbol = CURRENCY_SYMBOLS[inv.currency] || '$';
+    const symbol = CURRENCY_SYMBOLS[inv.currency] || '₹';
     const text = `SKT BRANDING - CLIENT INVOICE #${inv.invoiceNumber}\nClient: ${inv.clientName} (${inv.clientCompany || ''})\nProject: ${inv.projectName || 'Creative Deliverables'}\nTotal: ${symbol}${inv.total.toFixed(2)}\nBalance Due: ${symbol}${inv.balanceDue.toFixed(2)}\nStatus: ${inv.status.toUpperCase()}\nDue Date: ${inv.dueDate}\n\nPayment Details:\n${inv.paymentDetails || 'SKT BRANDING AGENCY ACCOUNT'}`;
 
     navigator.clipboard.writeText(text);
@@ -482,9 +482,9 @@ export default function AdminBilling({
     }, 200);
   };
 
-  const formatCurrency = (amount: number, curr = 'USD') => {
-    const symbol = CURRENCY_SYMBOLS[curr] || '$';
-    return `${symbol}${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = (amount: number, curr = 'INR') => {
+    const symbol = CURRENCY_SYMBOLS[curr] || '₹';
+    return `${symbol}${Number(amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const getStatusBadge = (status: InvoiceStatus) => {
@@ -572,10 +572,10 @@ export default function AdminBilling({
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-mono tracking-wider text-[#A3A3A3] uppercase">Total Invoiced</span>
             <div className="w-8 h-8 rounded-lg bg-[#FF4D00]/10 flex items-center justify-center text-[#FF4D00]">
-              <DollarSign className="w-4 h-4" />
+              <IndianRupee className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-white">{formatCurrency(metrics.totalInvoiced)}</p>
+          <p className="text-2xl font-black text-white">{formatCurrency(metrics.totalInvoiced, 'INR')}</p>
           <p className="text-[11px] text-[#737373]">Across {invoices.length} client work invoices</p>
         </div>
 
@@ -1412,9 +1412,9 @@ export default function AdminBilling({
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-[#0a0a0a] border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-[#FF4D00]"
                   >
+                    <option value="INR">INR (₹)</option>
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
-                    <option value="INR">INR (₹)</option>
                     <option value="AED">AED (AED)</option>
                     <option value="GBP">GBP (£)</option>
                   </select>
